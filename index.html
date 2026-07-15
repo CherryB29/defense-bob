@@ -65,6 +65,7 @@
             padding: 6px; width: 68px; height: 60px; text-align: center; font-size: 12px;
             font-weight: bold; color: #2c3e50; flex-shrink: 0; display: flex; flex-direction: column; justify-content: space-evenly;
             position: relative; cursor: grab;
+            letter-spacing: -0.5px;
         }
         .card:active { cursor: grabbing; }
         .card.disabled { opacity: 0.4; filter: grayscale(1); pointer-events: none; }
@@ -99,7 +100,7 @@
 <div id="game-wrapper">
     <div id="game-over-overlay" class="overlay">
         <h1>STAGE FAILED</h1>
-        <p id="fail-wave-text">웨이브 방어 실패!<br><span style="font-size: 13px; color: #bdc3c7;">(건설한 타워는 그대로 유지됩니다)</span></p>
+        <p id="fail-wave-text">웨이브 방어 실패!<br><span style="font-size: 13px; color: #bdc3c7;">(건설한 방어탑은 그대로 유지됩니다)</span></p>
         <button class="action-btn btn-upgrade" id="btn-retry-wave" style="width: 260px;" onclick="retryWave(false)">현재 웨이브 재도전 (3초)</button>
         <button class="action-btn btn-cancel" style="width: 260px; margin-top: 10px;" onclick="retryWave(true)">⏪ 이전 웨이브로 돌아가기</button>
     </div>
@@ -124,26 +125,26 @@
             </div>
 
             <div id="build-menu">
-                <div class="card" data-category="damage" data-type="cannon">대포<div class="card-cost">💰 40</div></div>
-                <div class="card" data-category="damage" data-type="shotgun">산탄총<div class="card-cost">💰 80</div></div>
-                <div class="card" data-category="damage" data-type="mortar">박격포<div class="card-cost">💰 130</div></div>
-                <div class="card" data-category="damage" data-type="tesla">테슬라<div class="card-cost">💰 180</div></div>
-                <div class="card" data-category="damage" data-type="pyro">화염기<div class="card-cost">💰 220</div></div>
-                <div class="card" data-category="damage" data-type="crossbow">대형석궁<div class="card-cost">💰 250</div></div>
+                <div class="card" data-category="damage" data-type="cannon">완두콩<br>발사대<div class="card-cost">💰 40</div></div>
+                <div class="card" data-category="damage" data-type="shotgun">압력솥<div class="card-cost">💰 80</div></div>
+                <div class="card" data-category="damage" data-type="mortar">코코넛<br>발사기<div class="card-cost">💰 130</div></div>
+                <div class="card" data-category="damage" data-type="tesla">전기 구이<div class="card-cost">💰 180</div></div>
+                <div class="card" data-category="damage" data-type="pyro">토치<div class="card-cost">💰 220</div></div>
+                <div class="card" data-category="damage" data-type="crossbow">이쑤시개<br>발사기<div class="card-cost">💰 250</div></div>
                 
-                <div class="card" data-category="utility" data-type="sprinkler" style="display:none;">스프링클러<div class="card-cost">💰 50</div></div>
-                <div class="card" data-category="utility" data-type="log" style="display:none;">통나무<div class="card-cost">💰 150</div></div>
+                <div class="card" data-category="utility" data-type="sprinkler" style="display:none;">정수기<div class="card-cost">💰 50</div></div>
+                <div class="card" data-category="utility" data-type="log" style="display:none;">밀대<div class="card-cost">💰 150</div></div>
                 <div class="card" data-category="utility" data-type="amplifier" style="display:none;">증폭기<div class="card-cost">💰 100</div></div>
 
-                <div class="card" data-category="resource" data-type="mine" style="display:none;">광산<div class="card-cost">💰 60</div></div>
+                <div class="card" data-category="resource" data-type="mine" style="display:none;">돼지<br>저금통<div class="card-cost">💰 60</div></div>
             </div>
 
             <div id="upgrade-menu">
-                <div id="upgrade-info" style="font-weight: bold; color: #2c3e50; font-size:13px;">타워 정보</div>
+                <div id="upgrade-info" style="font-weight: bold; color: #2c3e50; font-size:13px;">방어탑 정보</div>
                 <div id="upgrade-details"></div>
                 <button class="action-btn btn-upgrade" id="btn-do-upgrade">업그레이드 (💰 ?)</button>
                 <button class="action-btn btn-action" id="btn-set-angle" style="display:none; margin-bottom:4px;">🪵 발사 방향 재설정</button>
-                <button class="action-btn btn-sell" id="btn-sell-tower" style="margin-bottom:4px;">🔨 타워 판매 (💰 ?)</button>
+                <button class="action-btn btn-sell" id="btn-sell-tower" style="margin-bottom:4px;">🔨 방어탑 판매 (💰 ?)</button>
                 <button class="action-btn btn-cancel" id="btn-cancel-upgrade">취소</button>
             </div>
         </div>
@@ -158,7 +159,7 @@
 </div>
 
 <script>
-    const SAVE_KEY = 'defense_bob_save_v2';
+    const SAVE_KEY = 'defense_bob_save_v3';
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
@@ -167,21 +168,20 @@
         towers: [], enemies: [], particles: [], projectiles: [],
         enemiesToSpawn: [], spawnTimer: 0, waveDelay: 3.0, isWaveActive: false,
         selectedTower: null, settingAngleMode: false, isDraggingAngle: false,
-        // 드래그 앤 드롭 관련 상태
         isDraggingCard: false, dragCardType: null, dragX: 0, dragY: 0, dragClientY: 0,
         lastTime: performance.now(), autoRetryInterval: null, environmentProps: [] 
     };
 
     const TOWER_DEFS = {
-        mine:      { name: '광산', cost: 60, radius: 15, color: '#f1c40f', range: 0, cooldownMax: 6.0, prod: 2, upCost: 50 },
-        cannon:    { name: '대포', cost: 40, radius: 15, color: '#7f8c8d', range: 110, cooldownMax: 1.2, damage: 20, upCost: 40 }, 
-        shotgun:   { name: '산탄총', cost: 80, radius: 14, color: '#555555', range: 55, cooldownMax: 1.0, damage: 35, upCost: 70 },
-        mortar:    { name: '박격포', cost: 130, radius: 16, color: '#34495e', range: 180, cooldownMax: 2.5, damage: 25, upCost: 110 },
-        sprinkler: { name: '스프링클러', cost: 50, radius: 14, color: '#3498db', range: 90, cooldownMax: 1.5, damage: 0, upCost: 45 },
-        tesla:     { name: '테슬라', cost: 180, radius: 14, color: '#9b59b6', range: 120, cooldownMax: 1.6, damage: 17.5, upCost: 150, stunDuration: 0.5 },
-        log:       { name: '통나무 발사기', cost: 150, radius: 16, color: '#d35400', range: 0, cooldownMax: 6.5, damage: 0, upCost: 80, angle: -Math.PI / 2 },
-        pyro:      { name: '화염방사기', cost: 220, radius: 15, color: '#e67e22', range: 80, cooldownMax: 0.1, damage: 0.54, upCost: 180 },
-        crossbow:  { name: '대형석궁', cost: 250, radius: 13, color: '#16a085', range: 240, cooldownMax: 0.2, damage: 6, upCost: 200 },
+        mine:      { name: '돼지저금통', cost: 60, radius: 15, color: '#ff9ff3', range: 0, cooldownMax: 6.0, prod: 2, upCost: 50 },
+        cannon:    { name: '완두콩 발사대', cost: 40, radius: 15, color: '#2ecc71', range: 110, cooldownMax: 1.2, damage: 20, upCost: 40 }, 
+        shotgun:   { name: '압력솥', cost: 80, radius: 14, color: '#bdc3c7', range: 55, cooldownMax: 1.0, damage: 35, upCost: 70 },
+        mortar:    { name: '코코넛 발사기', cost: 130, radius: 16, color: '#8d6e63', range: 180, cooldownMax: 2.5, damage: 25, upCost: 110 },
+        sprinkler: { name: '정수기', cost: 50, radius: 14, color: '#ecf0f1', range: 90, cooldownMax: 1.5, damage: 0, upCost: 45 },
+        tesla:     { name: '전기 구이', cost: 180, radius: 14, color: '#95a5a6', range: 120, cooldownMax: 1.6, damage: 17.5, upCost: 150, stunDuration: 0.5 },
+        log:       { name: '밀대', cost: 150, radius: 16, color: '#e1b12c', range: 0, cooldownMax: 6.5, damage: 0, upCost: 80, angle: -Math.PI / 2 },
+        pyro:      { name: '토치', cost: 220, radius: 15, color: '#3498db', range: 80, cooldownMax: 0.1, damage: 0.54, upCost: 180 },
+        crossbow:  { name: '이쑤시개 발사기', cost: 250, radius: 13, color: '#d1ccc0', range: 240, cooldownMax: 0.2, damage: 6, upCost: 200 },
         amplifier: { name: '증폭기', cost: 100, radius: 14, color: '#f39c12', range: 80, cooldownMax: 0, damage: 0, upCost: 90 }
     };
 
@@ -194,12 +194,10 @@
         healer:  { speed: 42, maxHp: 85, radius: 13, emoji: '🥤', reward: 20 }
     };
 
-    // 로컬 스토리지 기능
     function saveGame() {
-        if (state.isGameOver) return; // 죽은 상태는 저장 안 함
+        if (state.isGameOver) return;
         const saveData = {
-            wave: state.wave,
-            money: state.money,
+            wave: state.wave, money: state.money,
             towers: state.towers.map(t => ({
                 x: t.x, y: t.y, type: t.type, level: t.level, totalCost: t.totalCost,
                 damage: t.damage, cooldownMax: t.cooldownMax, range: t.range, 
@@ -214,11 +212,10 @@
         if (saved) {
             try {
                 const data = JSON.parse(saved);
-                state.wave = data.wave;
-                state.money = data.money;
+                state.wave = data.wave; state.money = data.money;
                 state.towers = data.towers.map(t => ({
-                    ...TOWER_DEFS[t.type], ...t, // 기본 스펙에 저장된 스펙 덮어씌우기
-                    cooldown: 0, laserCharge: 0, currentTarget: null, isFiring: false
+                    ...TOWER_DEFS[t.type], ...t,
+                    cooldown: 0, laserCharge: 0, currentTarget: null, isFiring: false, searchDelay: 0
                 }));
                 return true;
             } catch (e) { console.error('Save loaded failed', e); }
@@ -227,33 +224,27 @@
     }
 
     window.triggerReset = function() {
-        if (confirm("정말 게임을 완전히 초기화하시겠습니까?\n모든 골드, 타워 배치와 웨이브 진행도가 리셋됩니다.")) {
-            localStorage.removeItem(SAVE_KEY);
-            location.reload();
+        if (confirm("정말 게임을 완전히 초기화하시겠습니까?\n모든 골드, 배치와 웨이브 진행도가 리셋됩니다.")) {
+            localStorage.removeItem(SAVE_KEY); location.reload();
         }
     };
 
     function initEnvironment() {
-        state.environmentProps = [];
-        const checkPathX = canvas.width / 2 || 250;
+        state.environmentProps = []; const checkPathX = canvas.width / 2 || 250;
         for (let i = 0; i < 40; i++) {
-            let x = Math.random() * canvas.width;
-            let y = Math.random() * canvas.height;
+            let x = Math.random() * canvas.width; let y = Math.random() * canvas.height;
             while (Math.abs(x - checkPathX) < 45) { x = Math.random() * canvas.width; }
             let type = Math.floor(Math.random() * 3);
-            let color = '#fff';
-            if (type === 1) color = Math.random() > 0.5 ? '#f1c40f' : '#e74c3c';
+            let color = '#fff'; if (type === 1) color = Math.random() > 0.5 ? '#f1c40f' : '#e74c3c';
             state.environmentProps.push({ x, y, type, color });
         }
     }
 
     function resizeCanvas() {
-        canvas.width = canvas.clientWidth;
-        canvas.height = canvas.clientHeight;
+        canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight;
         if (state.environmentProps.length === 0) initEnvironment(); 
     }
-    window.addEventListener('resize', resizeCanvas);
-    setTimeout(resizeCanvas, 50);
+    window.addEventListener('resize', resizeCanvas); setTimeout(resizeCanvas, 50);
 
     window.switchTab = function(category) {
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -299,24 +290,20 @@
             for(let i=0; i<healerCount; i++) spawnList.push({ type: 'healer', hpMult: hpMultiplier, speedMult: speedMultiplier });
         }
 
-        spawnList.sort(() => Math.random() - 0.5);
-        state.enemiesToSpawn = spawnList;
-        state.isWaveActive = true;
+        spawnList.sort(() => Math.random() - 0.5); state.enemiesToSpawn = spawnList; state.isWaveActive = true;
     }
 
     function createParticle(type, x, y, options = {}) {
         state.particles.push({ type, x, y, life: 1.0, ...options });
     }
 
-    // 드래그 앤 드롭 로직
+    // 드래그 앤 드롭
     document.querySelectorAll('.card').forEach(card => {
         const type = card.dataset.type;
         const startDrag = (e) => {
             if (state.isGameOver || state.money < TOWER_DEFS[type].cost) return;
-            state.isDraggingCard = true;
-            state.dragCardType = type;
-            closeUpgradeMenu();
-            updateDragPos(e);
+            state.isDraggingCard = true; state.dragCardType = type;
+            closeUpgradeMenu(); updateDragPos(e);
         };
         card.addEventListener('mousedown', startDrag);
         card.addEventListener('touchstart', (e) => { e.preventDefault(); startDrag(e.touches[0]); }, {passive: false});
@@ -327,8 +314,7 @@
         const rect = canvas.getBoundingClientRect();
         let clientX = e.clientX || (e.touches && e.touches[0].clientX);
         let clientY = e.clientY || (e.touches && e.touches[0].clientY);
-        
-        state.dragClientY = clientY; // UI 영역 침범 판별용
+        state.dragClientY = clientY;
         state.dragX = (clientX - rect.left) * (canvas.width / rect.width);
         state.dragY = (clientY - rect.top) * (canvas.height / rect.height);
     }
@@ -338,16 +324,14 @@
 
     function handleDragEnd() {
         if (state.isDraggingCard) {
-            const rect = canvas.getBoundingClientRect();
-            state.isDraggingCard = false;
+            const rect = canvas.getBoundingClientRect(); state.isDraggingCard = false;
             
-            // 캔버스 바닥(bottom)을 넘어가면 취소 (하단 UI 위로 가져간 경우)
             if (state.dragClientY > rect.bottom || state.dragX < 0 || state.dragX > canvas.width) {
                 createParticle('text', canvas.width / 2, canvas.height - 30, {text: '설치 취소됨', color: '#95a5a6'});
             } else {
                 let def = TOWER_DEFS[state.dragCardType];
                 if (state.dragCardType === 'mine' && state.towers.filter(t => t.type === 'mine').length >= 10) {
-                    createParticle('text', state.dragX, state.dragY, { text: '광산 최대 10개!', color: '#e74c3c' });
+                    createParticle('text', state.dragX, state.dragY, { text: '돼지저금통 최대 10개!', color: '#e74c3c' });
                 } else if (canBuild(state.dragX, state.dragY, def.radius)) {
                     buildTower(state.dragCardType, state.dragX, state.dragY);
                 } else {
@@ -370,20 +354,18 @@
         let def = TOWER_DEFS[type];
         state.money -= def.cost;
         let newTower = {
-            x: x, y: y, type: type, level: 1, cooldown: 0, laserCharge: 0,
+            x: x, y: y, type: type, level: 1, cooldown: 0, laserCharge: 0, searchDelay: 0,
             currentTarget: null, totalCost: def.cost, isFiring: false, beamTx: 0, beamTy: 0,
             angle: def.angle || -Math.PI / 2, targetAngle: def.angle || -Math.PI / 2, currentAngle: def.angle || -Math.PI / 2, 
             isBuffed: false, speedMult: 1.0, ...def
         };
         state.towers.push(newTower);
         createParticle('text', x, y, { text: '-💰' + def.cost, color: '#e74c3c' });
-        saveGame(); // 건설 후 자동 저장
+        saveGame();
     }
 
-    // 타워 클릭 시 업그레이드 또는 각도 설정
     const handleDown = (clientX, clientY) => {
         if (state.isGameOver || state.isDraggingCard) return;
-        
         const rect = canvas.getBoundingClientRect();
         const tx = (clientX - rect.left) * (canvas.width / rect.width);
         const ty = (clientY - rect.top) * (canvas.height / rect.height);
@@ -396,12 +378,9 @@
 
         let clickedTower = null;
         for (let tower of state.towers) {
-            if (Math.hypot(tower.x - tx, tower.y - ty) <= tower.radius + 15) {
-                clickedTower = tower; break;
-            }
+            if (Math.hypot(tower.x - tx, tower.y - ty) <= tower.radius + 15) { clickedTower = tower; break; }
         }
-        if (clickedTower) openUpgradeMenu(clickedTower);
-        else closeUpgradeMenu();
+        if (clickedTower) openUpgradeMenu(clickedTower); else closeUpgradeMenu();
     };
 
     const handleMove = (clientX, clientY) => {
@@ -413,9 +392,7 @@
         }
     };
 
-    const handleUp = () => {
-        if (state.settingAngleMode) state.isDraggingAngle = false;
-    };
+    const handleUp = () => { if (state.settingAngleMode) state.isDraggingAngle = false; };
 
     canvas.addEventListener('mousedown', e => handleDown(e.clientX, e.clientY));
     canvas.addEventListener('mousemove', e => handleMove(e.clientX, e.clientY));
@@ -448,12 +425,9 @@
         let t = state.selectedTower; let cost = t.upCost * t.level; let refund = Math.floor(t.totalCost * 0.6);
         
         document.getElementById('upgrade-info').innerHTML = `Lv.${t.level} ➡️ <span style="color:#2ecc71;">Lv.${t.level + 1}</span> ${t.name}`;
-        let btn = document.getElementById('btn-do-upgrade');
-        btn.innerText = `업그레이드 (💰 ${cost})`;
+        let btn = document.getElementById('btn-do-upgrade'); btn.innerText = `업그레이드 (💰 ${cost})`;
         document.getElementById('btn-sell-tower').innerText = `🔨 판매 (💰 +${refund})`;
-
-        if (state.money < cost) btn.classList.add('disabled');
-        else btn.classList.remove('disabled');
+        if (state.money < cost) btn.classList.add('disabled'); else btn.classList.remove('disabled');
 
         let detailsHtml = '';
         if (t.type === 'mine') {
@@ -482,11 +456,6 @@
             let curSpeed = (t.cooldownMax / speedMult).toFixed(2); let nextSpeed = (Math.max(0.1, t.cooldownMax * 0.9) / speedMult).toFixed(2);
             let buffTag = speedMult > 1.0 ? ' <span style="color:#f39c12; font-size:10px;">(강화됨)</span>' : '';
             detailsHtml += `<div class="stat-row"><span>공격 대기시간:</span> <span>⏱️ ${curSpeed}초${buffTag} ➡️ <span class="stat-up">${nextSpeed}초</span></span></div>`;
-
-            if (t.type === 'tesla') {
-                let curStun = t.stunDuration || 0.5; let nextStun = Math.min(1.8, curStun + 0.25); let cap = nextStun >= 1.8 ? ' (MAX)' : '';
-                detailsHtml += `<div class="stat-row"><span>기절 지속 시간:</span> <span>⚡ ${curStun.toFixed(2)}초 ➡️ <span class="stat-up">${nextStun.toFixed(2)}초${cap}</span></span></div>`;
-            }
         }
         document.getElementById('upgrade-details').innerHTML = detailsHtml;
     }
@@ -503,8 +472,7 @@
             }
             if (t.range > 0) t.range += 15;
             if (t.type !== 'amplifier') t.cooldownMax = Math.max(0.1, t.cooldownMax * 0.9);
-            createParticle('text', t.x, t.y, { text: '레벨 업!', color: '#2ecc71' }); updateUpgradeUI();
-            saveGame(); // 업그레이드 후 자동 저장
+            createParticle('text', t.x, t.y, { text: '레벨 업!', color: '#2ecc71' }); updateUpgradeUI(); saveGame();
         }
     };
     document.getElementById('btn-do-upgrade').addEventListener('touchstart', handleUpgradeTouch, {passive:false});
@@ -515,7 +483,7 @@
         let t = state.selectedTower; let refund = Math.floor(t.totalCost * 0.6); state.money += refund;
         createParticle('text', t.x, t.y, { text: '+💰' + refund, color: '#f1c40f' });
         let index = state.towers.indexOf(t); if(index > -1) state.towers.splice(index, 1);
-        closeUpgradeMenu(); saveGame(); // 판매 후 자동 저장
+        closeUpgradeMenu(); saveGame();
     };
     document.getElementById('btn-sell-tower').addEventListener('touchstart', handleSellTouch, {passive:false});
     document.getElementById('btn-sell-tower').addEventListener('click', handleSellTouch);
@@ -552,7 +520,6 @@
         target.hp -= baseDamage * (1 - reduction);
     }
 
-    // 게임 루프 로직
     function update(dt) {
         const checkPathX = canvas.width / 2;
 
@@ -577,8 +544,7 @@
             state.spawnTimer += dt;
             if (state.spawnTimer > 1.2 && state.enemiesToSpawn.length > 0) {
                 state.spawnTimer = 0;
-                let next = state.enemiesToSpawn.shift();
-                let def = ENEMY_DEFS[next.type];
+                let next = state.enemiesToSpawn.shift(); let def = ENEMY_DEFS[next.type];
                 state.enemies.push({
                     x: checkPathX + (Math.random() * 26 - 13), y: -20, ...def, 
                     hp: def.maxHp * next.hpMult, maxHp: def.maxHp * next.hpMult,
@@ -590,7 +556,7 @@
                 state.isWaveActive = false; state.waveDelay = 3.0;
                 let bonus = state.wave * 20; state.money += bonus;
                 createParticle('text', canvas.width/2, canvas.height/2, { text: `웨이브 ${state.wave} 완료! +💰${bonus}`, color: '#f1c40f' });
-                saveGame(); // 웨이브 클리어 시 자동 저장
+                saveGame();
             }
         } else {
             state.waveDelay -= dt;
@@ -600,8 +566,7 @@
         for (let i = state.enemies.length - 1; i >= 0; i--) {
             let e = state.enemies[i];
             if (e.type === 'healer') {
-                if (!e.healCooldown) e.healCooldown = 1.5; 
-                e.healCooldown -= dt;
+                if (!e.healCooldown) e.healCooldown = 1.5;  e.healCooldown -= dt;
                 if (e.healCooldown <= 0) {
                     e.healCooldown = 1.5; let healedAny = false;
                     state.enemies.forEach(other => {
@@ -617,10 +582,7 @@
                 }
             }
 
-            if (e.isWet) {
-                e.wetTimer -= dt;
-                if (e.wetTimer <= 0) { e.isWet = false; e.wetSlow = 1.0; }
-            }
+            if (e.isWet) { e.wetTimer -= dt; if (e.wetTimer <= 0) { e.isWet = false; e.wetSlow = 1.0; } }
 
             if (e.stunTimer > 0) {
                 e.stunTimer -= dt;
@@ -709,6 +671,48 @@
                 } return;
             } else if (t.type === 'amplifier') return; 
 
+            if (t.type === 'pyro') {
+                let targetValid = t.currentTarget && state.enemies.includes(t.currentTarget) && Math.hypot(t.x - t.currentTarget.x, t.y - t.currentTarget.y) <= t.range;
+                
+                if (!targetValid) {
+                    if (t.currentTarget !== null) {
+                        t.currentTarget = null; t.searchDelay = 0.4; // 타겟 상실 시 0.4초 딜레이
+                        t.laserCharge = 0; t.isFiring = false;
+                    }
+                }
+                
+                if (!t.currentTarget) {
+                    if (t.searchDelay > 0) {
+                        t.searchDelay -= dt;
+                    } else {
+                        let minDist = t.range; let newTarget = null;
+                        state.enemies.forEach(e => {
+                            let d = Math.hypot(t.x - e.x, t.y - e.y);
+                            if (d <= minDist) { minDist = d; newTarget = e; }
+                        });
+                        if (newTarget) t.currentTarget = newTarget;
+                    }
+                }
+
+                if (t.currentTarget) {
+                    t.laserCharge = Math.min(10, t.laserCharge + dt * 3.5); t.isFiring = true;
+                    t.beamTx = t.currentTarget.x; t.beamTy = t.currentTarget.y;
+                    t.targetAngle = Math.atan2(t.currentTarget.y - t.y, t.currentTarget.x - t.x);
+                    if (t.cooldown <= 0) {
+                        applyDamageToEnemy(t.currentTarget, t.damage + Math.floor(t.laserCharge)); t.cooldown = t.cooldownMax;
+                    }
+                }
+                
+                // 자연스러운 회전 처리
+                if (t.currentAngle !== undefined && t.currentTarget) {
+                    let diff = t.targetAngle - t.currentAngle;
+                    while (diff < -Math.PI) diff += Math.PI * 2;
+                    while (diff > Math.PI) diff -= Math.PI * 2;
+                    t.currentAngle += diff * dt * 8; 
+                }
+                return;
+            }
+
             let target = null;
             if (t.currentTarget && state.enemies.includes(t.currentTarget)) {
                 if (Math.hypot(t.x - t.currentTarget.x, t.y - t.currentTarget.y) <= t.range) target = t.currentTarget;
@@ -734,17 +738,6 @@
                 t.currentAngle += diff * dt * 8; 
             }
 
-            if (t.type === 'pyro') {
-                if (target) {
-                    t.laserCharge = Math.min(10, t.laserCharge + dt * 3.5); t.isFiring = true;
-                    t.beamTx = target.x; t.beamTy = target.y;
-                    if (t.cooldown <= 0) {
-                        applyDamageToEnemy(target, t.damage + Math.floor(t.laserCharge)); t.cooldown = t.cooldownMax;
-                    }
-                } else { t.laserCharge = 0; t.isFiring = false; }
-                return;
-            }
-
             if (t.type === 'log') {
                 if (t.cooldown <= 0) {
                     t.cooldown = t.cooldownMax; let logMaxDistance = 200 + (t.level * 80); 
@@ -757,8 +750,8 @@
                 if (t.type === 'cannon') {
                     state.projectiles.push({ type: 'cannon_ball', x: t.x, y: t.y, speed: 180, target: target, damage: t.damage });
                 } else if (t.type === 'shotgun') {
-                    applyDamageToEnemy(target, t.damage); createParticle('explosion', target.x, target.y, { radius: 18 });
-                    for(let j=0; j<3; j++) createParticle('laser', t.x, t.y, { tx: target.x + (Math.random()-0.5)*20, ty: target.y + (Math.random()-0.5)*20, color: '#e74c3c', width: 2 });
+                    applyDamageToEnemy(target, t.damage); createParticle('splash', target.x, target.y, { radius: 22, color: 'rgba(236, 240, 241, 0.8)' });
+                    for(let j=0; j<4; j++) createParticle('laser', t.x, t.y, { tx: target.x + (Math.random()-0.5)*25, ty: target.y + (Math.random()-0.5)*25, color: 'rgba(236, 240, 241, 0.6)', width: 3 });
                 } else if (t.type === 'mortar') {
                     let dist = Math.hypot(target.x - t.x, target.y - t.y); let duration = Math.max(0.5, dist / 160); 
                     state.projectiles.push({ type: 'mortar_shell', x: t.x, y: t.y, startX: t.x, startY: t.y, tx: target.x, ty: target.y, progress: 0, speed: 1 / duration, damage: t.damage });
@@ -788,6 +781,57 @@
                 }
             }
         });
+    }
+
+    function drawTowerDesign(ctx, type, renderAngle, tObj = null) {
+        switch (type) {
+            case 'mine': 
+                ctx.fillStyle = '#f368e0'; ctx.beginPath(); ctx.ellipse(2, 0, 3, 5, 0, 0, Math.PI*2); ctx.fill(); // 돼지 코
+                ctx.fillStyle = '#222'; ctx.fillRect(-2, -1, 4, 2); // 동전 구멍
+                break;
+            case 'amplifier': 
+                ctx.beginPath(); ctx.arc(0, 0, 6, 0, Math.PI*2); ctx.strokeStyle = 'white'; ctx.lineWidth = 2; ctx.stroke(); 
+                ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI*2); ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 1; ctx.stroke(); 
+                break;
+            case 'cannon': 
+                ctx.rotate(renderAngle); ctx.fillStyle = '#27ae60'; ctx.fillRect(4, -4, 18, 8); // 초록색 완두콩 발사대
+                break;
+            case 'shotgun': 
+                ctx.fillStyle = '#bdc3c7'; ctx.beginPath(); ctx.arc(0,0,10,0,Math.PI*2); ctx.fill(); // 솥 뚜껑
+                ctx.rotate(renderAngle); ctx.fillStyle = '#34495e'; ctx.fillRect(2, -2, 14, 4); // 압력솥 손잡이
+                break;
+            case 'mortar': 
+                ctx.rotate(renderAngle); ctx.fillStyle = '#5d4037'; ctx.fillRect(0, -6, 12, 12); // 코코넛 나무통
+                break;
+            case 'tesla': 
+                ctx.fillStyle = '#7f8c8d'; ctx.fillRect(-8, -6, 16, 12); // 그릴 외형
+                ctx.strokeStyle = '#34495e'; ctx.lineWidth = 1;
+                for(let y = -4; y <= 4; y += 4) { ctx.beginPath(); ctx.moveTo(-6, y); ctx.lineTo(6, y); ctx.stroke(); }
+                break;
+            case 'pyro': 
+                ctx.rotate(renderAngle); 
+                ctx.fillStyle = '#3498db'; ctx.fillRect(-4, -6, 8, 12); // 파란 가스통
+                ctx.fillStyle = '#f1c40f'; ctx.fillRect(4, -2, 6, 4);   // 황동색 노즐
+                break;
+            case 'crossbow': 
+                ctx.rotate(renderAngle); 
+                ctx.fillStyle = '#a0522d'; ctx.fillRect(2, -1, 14, 2); // 나무 받침대
+                ctx.fillStyle = '#f5deb3'; ctx.fillRect(4, -0.5, 12, 1); // 이쑤시개 장전
+                ctx.beginPath(); ctx.moveTo(12, -6); ctx.lineTo(16, 0); ctx.lineTo(12, 6); 
+                ctx.strokeStyle = '#a0522d'; ctx.lineWidth = 1.5; ctx.stroke(); 
+                break;
+            case 'log': 
+                ctx.rotate(renderAngle); 
+                ctx.fillStyle = '#e1b12c'; ctx.fillRect(-4, -10, 8, 20); // 밀대 나무 본체
+                ctx.fillStyle = '#c23616'; ctx.fillRect(-2, -14, 4, 4); ctx.fillRect(-2, 10, 4, 4); // 밀대 빨간 손잡이
+                break;
+            case 'sprinkler': 
+                ctx.fillStyle = '#ecf0f1'; ctx.fillRect(-6, -8, 12, 16); // 흰색 정수기 본체
+                ctx.fillStyle = '#3498db'; ctx.fillRect(-4, -6, 8, 5); // 파란 물통
+                ctx.fillStyle = '#e74c3c'; ctx.fillRect(-4, 0, 3, 3); // 온수 버튼
+                ctx.fillStyle = '#3498db'; ctx.fillRect(1, 0, 3, 3); // 냉수 버튼
+                break;
+        }
     }
 
     function draw() {
@@ -841,19 +885,8 @@
             ctx.fillStyle = t.color; ctx.fill(); ctx.strokeStyle = '#2c3e50'; ctx.lineWidth = 2.5; ctx.stroke();
 
             ctx.save(); ctx.translate(t.x, t.y);
-            let renderAngle = t.currentAngle !== undefined ? t.currentAngle : 0;
-            switch (t.type) {
-                case 'mine': ctx.fillStyle = '#fff'; ctx.font = 'bold 12px Arial'; ctx.textAlign='center'; ctx.fillText('M', 0, 4); break;
-                case 'amplifier': ctx.beginPath(); ctx.arc(0, 0, 6, 0, Math.PI*2); ctx.strokeStyle = 'white'; ctx.lineWidth = 2; ctx.stroke(); ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI*2); ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 1; ctx.stroke(); break;
-                case 'cannon': ctx.rotate(renderAngle); ctx.fillStyle = '#2c3e50'; ctx.fillRect(4, -4, 18, 8); break;
-                case 'shotgun': ctx.rotate(renderAngle); ctx.fillStyle = '#2c3e50'; ctx.fillRect(2, -7, 10, 4); ctx.fillRect(2, 3, 10, 4); ctx.fillRect(4, -2, 12, 4); break;
-                case 'mortar': ctx.rotate(renderAngle); ctx.fillStyle = '#1a252f'; ctx.fillRect(0, -6, 12, 12); break;
-                case 'tesla': ctx.fillStyle = '#fff'; ctx.font = 'bold 10px Arial'; ctx.textAlign='center'; ctx.fillText('⚡', 0, 3); break;
-                case 'pyro': ctx.rotate(renderAngle); ctx.fillStyle = '#c0392b'; ctx.fillRect(2, -3, 16, 6); break;
-                case 'crossbow': ctx.rotate(renderAngle); ctx.fillStyle = '#fff'; ctx.fillRect(2, -1, 14, 2); ctx.beginPath(); ctx.moveTo(12, -6); ctx.lineTo(16, 0); ctx.lineTo(12, 6); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke(); break;
-                case 'log': ctx.rotate(t.angle); ctx.fillStyle = '#8a4f2a'; ctx.fillRect(-4, -10, 8, 20); break;
-                case 'sprinkler': ctx.fillStyle = '#64ced3'; ctx.beginPath(); ctx.arc(0, 2, 6, 0, Math.PI, false); ctx.lineTo(0, -8); ctx.closePath(); ctx.fill(); break;
-            }
+            let renderAngle = t.type === 'log' ? t.angle : (t.currentAngle !== undefined ? t.currentAngle : 0);
+            drawTowerDesign(ctx, t.type, renderAngle, t);
             ctx.restore();
 
             ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.font = 'bold 9px Arial';
@@ -874,24 +907,18 @@
             }
         });
 
-        // 드래그 중인 미리보기 타워 렌더링
         if (state.isDraggingCard && state.dragCardType) {
             let def = TOWER_DEFS[state.dragCardType];
-            let px = state.dragX;
-            let py = state.dragY;
-            
-            // UI를 넘어갔는지 체크해서 색상 변경
+            let px = state.dragX; let py = state.dragY;
             const isCanceled = state.dragClientY > canvas.getBoundingClientRect().bottom || px < 0 || px > canvas.width;
             
             ctx.save();
-            // 사거리 테두리 그리기
             if (def.range > 0 && !isCanceled) {
                 ctx.beginPath(); ctx.arc(px, py, def.range, 0, Math.PI * 2);
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.15)'; ctx.fill();
                 ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)'; ctx.lineWidth = 1; ctx.stroke();
             }
 
-            // 타워 몸통
             ctx.globalAlpha = 0.6;
             ctx.beginPath(); ctx.arc(px, py, def.radius, 0, Math.PI * 2);
             ctx.fillStyle = isCanceled || (!isCanceled && !canBuild(px, py, def.radius) && state.dragCardType !== 'mine') ? '#e74c3c' : def.color; 
@@ -899,18 +926,7 @@
 
             ctx.translate(px, py);
             let renderAngle = def.angle || -Math.PI / 2;
-            switch (state.dragCardType) {
-                case 'mine': ctx.fillStyle = '#fff'; ctx.font = 'bold 12px Arial'; ctx.textAlign='center'; ctx.fillText('M', 0, 4); break;
-                case 'amplifier': ctx.beginPath(); ctx.arc(0, 0, 6, 0, Math.PI*2); ctx.strokeStyle = 'white'; ctx.lineWidth = 2; ctx.stroke(); ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI*2); ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 1; ctx.stroke(); break;
-                case 'cannon': ctx.rotate(renderAngle); ctx.fillStyle = '#2c3e50'; ctx.fillRect(4, -4, 18, 8); break;
-                case 'shotgun': ctx.rotate(renderAngle); ctx.fillStyle = '#2c3e50'; ctx.fillRect(2, -7, 10, 4); ctx.fillRect(2, 3, 10, 4); ctx.fillRect(4, -2, 12, 4); break;
-                case 'mortar': ctx.rotate(renderAngle); ctx.fillStyle = '#1a252f'; ctx.fillRect(0, -6, 12, 12); break;
-                case 'tesla': ctx.fillStyle = '#fff'; ctx.font = 'bold 10px Arial'; ctx.textAlign='center'; ctx.fillText('⚡', 0, 3); break;
-                case 'pyro': ctx.rotate(renderAngle); ctx.fillStyle = '#c0392b'; ctx.fillRect(2, -3, 16, 6); break;
-                case 'crossbow': ctx.rotate(renderAngle); ctx.fillStyle = '#fff'; ctx.fillRect(2, -1, 14, 2); ctx.beginPath(); ctx.moveTo(12, -6); ctx.lineTo(16, 0); ctx.lineTo(12, 6); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke(); break;
-                case 'log': ctx.rotate(renderAngle); ctx.fillStyle = '#8a4f2a'; ctx.fillRect(-4, -10, 8, 20); break;
-                case 'sprinkler': ctx.fillStyle = '#64ced3'; ctx.beginPath(); ctx.arc(0, 2, 6, 0, Math.PI, false); ctx.lineTo(0, -8); ctx.closePath(); ctx.fill(); break;
-            }
+            drawTowerDesign(ctx, state.dragCardType, renderAngle, null);
             ctx.restore();
         }
 
@@ -933,26 +949,19 @@
 
         state.projectiles.forEach(p => {
             if (p.type === 'cannon_ball') {
-                ctx.beginPath(); ctx.arc(p.x, p.y, 5, 0, Math.PI * 2); ctx.fillStyle = '#2c3e50'; ctx.fill();
+                ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI * 2); ctx.fillStyle = '#2ecc71'; ctx.fill(); // 초록색 완두콩
             } else if (p.type === 'mortar_shell') {
-                ctx.beginPath(); ctx.arc(p.x, p.y, 6, 0, Math.PI * 2); ctx.fillStyle = '#2c3e50'; ctx.fill();
-                ctx.strokeStyle = '#e74c3c'; ctx.lineWidth = 1; ctx.stroke();
+                ctx.beginPath(); ctx.arc(p.x, p.y, 6, 0, Math.PI * 2); ctx.fillStyle = '#795548'; ctx.fill(); // 갈색 코코넛
+                ctx.strokeStyle = '#3e2723'; ctx.lineWidth = 1; ctx.stroke();
             } else if (p.type === 'arrow') {
                 ctx.save(); ctx.translate(p.x, p.y);
                 let angle = p.target ? Math.atan2(p.target.y - p.y, p.target.x - p.x) : 0; ctx.rotate(angle);
-                ctx.fillStyle = '#95a5a6'; ctx.fillRect(-6, -1, 12, 2); ctx.fillStyle = '#e74c3c'; ctx.fillRect(4, -2, 4, 4); 
+                ctx.fillStyle = '#f5deb3'; ctx.fillRect(-6, -1, 12, 2); // 베이지색 이쑤시개
                 ctx.restore();
             } else if (p.type === 'log_obj') {
                 ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.angle); 
-                ctx.fillStyle = '#8a4f2a'; ctx.fillRect(-6, -16, 12, 32);
-                ctx.fillStyle = '#d35400'; ctx.beginPath(); ctx.ellipse(0, -16, 6, 2, 0, 0, Math.PI*2); ctx.fill();
-                ctx.beginPath(); ctx.ellipse(0, 16, 6, 2, 0, 0, Math.PI*2); ctx.fill();
-                ctx.strokeStyle = '#5c3a21'; ctx.lineWidth = 1.5;
-                let rollOffset = (p.rotation * 10) % 12; 
-                for (let offset = -24; offset <= 24; offset += 8) {
-                    let xPos = -6 + ((rollOffset + offset + 24) % 12);
-                    if (xPos > -6 && xPos < 6) { ctx.beginPath(); ctx.moveTo(xPos, -15); ctx.lineTo(xPos, 15); ctx.stroke(); }
-                }
+                ctx.fillStyle = '#e1b12c'; ctx.fillRect(-6, -16, 12, 32); // 밀대 본체
+                ctx.fillStyle = '#c23616'; ctx.fillRect(-3, -20, 6, 4); ctx.fillRect(-3, 16, 6, 4); // 양쪽 빨간 손잡이
                 ctx.restore();
             }
         });
@@ -992,14 +1001,7 @@
         if (dt < 0.1) { update(dt); draw(); } requestAnimationFrame(loop);
     }
     
-    // 게임 시작 시 세이브 데이터 불러오기
-    if (!loadGame()) {
-        generateWave(state.wave);
-    } else {
-        // 불러온 경우, 해당 웨이브 생성
-        generateWave(state.wave);
-    }
-    
+    if (!loadGame()) { generateWave(state.wave); } else { generateWave(state.wave); }
     requestAnimationFrame(loop);
 </script>
 </body>
