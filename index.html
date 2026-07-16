@@ -15,8 +15,7 @@
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
             background-color: var(--bg-color); font-family: 'Segoe UI', Tahoma, sans-serif;
-            overflow: hidden; user-select: none; -webkit-user-select: none;
-            touch-action: manipulation; /* 스크롤 간섭 문제 해결을 위해 none에서 변경 */
+            overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none;
         }
         #game-wrapper {
             position: relative; width: 100%; height: 100%; max-width: 500px; margin: 0 auto;
@@ -35,72 +34,41 @@
             white-space: nowrap; letter-spacing: 1px;
         }
         .stat-box { font-size: 14px; font-weight: bold; display: flex; align-items: center; gap: 4px; }
-        .money-text { color: var(--money-color); font-size: 16px; margin-right: 6px; }
+        .money-text { color: var(--money-color); font-size: 15px; margin-right: 6px; }
         .btn-reset-top {
             background: #e74c3c; color: white; border: none; padding: 4px 6px;
             border-radius: 4px; font-weight: bold; font-size: 11px; cursor: pointer; transition: 0.2s;
         }
         .btn-reset-top:active { background: #c0392b; }
-        
-        canvas { flex: 1; width: 100%; height: 0; display: block; touch-action: none; }
-        
+        canvas { flex: 1; width: 100%; height: 0; display: block; }
         #bottom-ui {
-            background: #ecf0f1; box-shadow: 0 -4px 6px rgba(0,0,0,0.2);
+            background: #ecf0f1; box-shadow: 0 -4px 6px rgba(0,0,0,0.1);
             z-index: 10; display: flex; flex-direction: column; flex-shrink: 0;
             padding-bottom: env(safe-area-inset-bottom); position: relative;
         }
-        
-        /* 토글 가능한 헤더 (돈 표시 포함) */
-        #menu-header {
-            background: #bdc3c7; color: #2c3e50; padding: 10px 15px;
-            display: flex; justify-content: space-between; align-items: center;
-            font-weight: bold; font-size: 14px; cursor: pointer;
-            border-bottom: 1px solid #a6acaf; flex-shrink: 0;
-        }
-        
-        #menu-content {
-            display: flex; flex-direction: column; width: 100%;
-        }
-
+        #normal-bottom { display: flex; flex-direction: column; width: 100%; }
         #tab-menu { display: flex; background: #bdc3c7; }
         .tab-btn {
             flex: 1; padding: 10px 0; border: none; background: none;
             font-weight: bold; font-size: 14px; color: #7f8c8d; cursor: pointer; transition: 0.2s;
         }
         .tab-btn.active { background: #ecf0f1; color: var(--tab-active); border-top: 3px solid var(--tab-active); }
-        
-        /* 터치 스크롤을 부드럽게 허용 */
-        #build-menu { 
-            display: flex; gap: 6px; padding: 10px 8px; overflow-x: auto; flex-shrink: 0; position: relative;
-            touch-action: pan-x; -webkit-overflow-scrolling: touch; 
-        }
-        
+        #build-menu { display: flex; gap: 6px; padding: 10px 8px; overflow-x: auto; flex-shrink: 0; position: relative; }
         #upgrade-menu {
             display: none; flex-direction: column; align-items: center; justify-content: center;
             padding: 8px; gap: 4px; height: auto;
         }
         #angle-ui { display: none; flex-direction: column; padding: 12px; gap: 8px; }
 
-        /* 심플해진 담백한 설명 UI */
-        #desc-ui {
-            display: none; flex-direction: column; padding: 15px; background: #fff; box-sizing: border-box; flex-shrink: 0;
-        }
-        .desc-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ecf0f1; padding-bottom: 8px; margin-bottom: 10px; }
-        .desc-title { font-weight: bold; font-size: 15px; color: #2c3e50; }
-        .desc-text { font-size: 13px; color: #555; line-height: 1.5; margin-bottom: 10px; white-space: pre-line; word-break: keep-all; }
-        .desc-stats { font-size: 12px; color: #333; background: #f8f9f9; padding: 10px; border-radius: 4px; border: 1px solid #eee; white-space: pre-line; line-height: 1.4; }
-        .btn-small { padding: 4px 10px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; color: white; background: #95a5a6; font-size: 12px; transition: 0.2s;}
-        .btn-small:active { background: #7f8c8d; }
-
         .card {
             background: white; border: 2px solid #bdc3c7; border-radius: 8px;
             padding: 6px; width: 68px; height: 60px; text-align: center; font-size: 12px;
             font-weight: bold; color: #2c3e50; flex-shrink: 0; display: flex; flex-direction: column; justify-content: space-evenly;
-            position: relative; cursor: grab; letter-spacing: -0.5px;
+            position: relative; cursor: grab;
+            letter-spacing: -0.5px;
         }
         .card:active { cursor: grabbing; }
-        /* pointer-events:none 제거로 돈 부족 시에도 터치(설명 보기)가 가능하게 변경 */
-        .card.disabled { opacity: 0.4; filter: grayscale(1); }
+        .card.disabled { opacity: 0.4; filter: grayscale(1); pointer-events: none; }
         .card-cost { color: var(--money-color); font-size: 11px; }
 
         .action-btn { padding: 6px 12px; border: none; border-radius: 6px; font-weight: bold; font-size: 12px; color: white; width: 95%; cursor: pointer; }
@@ -140,67 +108,54 @@
     <div id="top-ui">
         <div class="stat-box">웨이브 <span id="wave-text">1</span></div>
         <div class="title-text">Defense BOB</div>
-        <button class="btn-reset-top" onclick="triggerReset()">🔄 리셋</button>
+        <div style="display:flex; align-items:center;">
+            <div class="stat-box money-text">💰 <span id="money-text">0</span></div>
+            <button class="btn-reset-top" onclick="triggerReset()">🔄</button>
+        </div>
     </div>
 
     <canvas id="gameCanvas"></canvas>
 
     <div id="bottom-ui">
-        <div id="menu-header" onclick="toggleMenu()">
-            <div class="stat-box money-text">💰 <span id="money-text">0</span></div>
-            <div id="menu-toggle-btn" style="color:#e74c3c;">▼ 닫기</div>
+        <div id="normal-bottom">
+            <div id="tab-menu">
+                <button class="tab-btn active" onclick="switchTab('damage')">⚔️ 피해</button>
+                <button class="tab-btn" onclick="switchTab('utility')">🛡️ 보조</button>
+                <button class="tab-btn" onclick="switchTab('resource')">💎 자원</button>
+            </div>
+
+            <div id="build-menu">
+                <div class="card" data-category="damage" data-type="cannon">완두콩<br>발사대<div class="card-cost">💰 40</div></div>
+                <div class="card" data-category="damage" data-type="shotgun">압력솥<div class="card-cost">💰 80</div></div>
+                <div class="card" data-category="damage" data-type="mortar">코코넛<br>발사기<div class="card-cost">💰 130</div></div>
+                <div class="card" data-category="damage" data-type="tesla">전기 구이<div class="card-cost">💰 180</div></div>
+                <div class="card" data-category="damage" data-type="pyro">토치<div class="card-cost">💰 220</div></div>
+                <div class="card" data-category="damage" data-type="crossbow">이쑤시개<br>발사기<div class="card-cost">💰 250</div></div>
+                <div class="card" data-category="damage" data-type="fryer" style="display:none;">튀김기<div class="card-cost">💰 300</div></div>
+                
+                <div class="card" data-category="utility" data-type="sprinkler" style="display:none;">정수기<div class="card-cost">💰 50</div></div>
+                <div class="card" data-category="utility" data-type="log" style="display:none;">밀대<div class="card-cost">💰 150</div></div>
+                <div class="card" data-category="utility" data-type="amplifier" style="display:none;">증폭기<div class="card-cost">💰 100</div></div>
+                <div class="card" data-category="utility" data-type="gelatin" style="display:none;">젤라틴<div class="card-cost" id="gelatin-cost-text">💰 320</div></div>
+
+                <div class="card" data-category="resource" data-type="mine" style="display:none;">돼지<br>저금통<div class="card-cost">💰 60</div></div>
+            </div>
+
+            <div id="upgrade-menu">
+                <div id="upgrade-info" style="font-weight: bold; color: #2c3e50; font-size:13px;">방어탑 정보</div>
+                <div id="upgrade-details"></div>
+                <button class="action-btn btn-upgrade" id="btn-do-upgrade">업그레이드 (💰 ?)</button>
+                <button class="action-btn btn-action" id="btn-set-angle" style="display:none; margin-bottom:4px;">🪵 발사 방향 재설정</button>
+                <button class="action-btn btn-sell" id="btn-sell-tower" style="margin-bottom:4px;">🔨 방어탑 판매 (💰 ?)</button>
+                <button class="action-btn btn-cancel" id="btn-cancel-upgrade">취소</button>
+            </div>
         </div>
 
-        <div id="menu-content">
-            <div id="normal-bottom">
-                <div id="tab-menu">
-                    <button class="tab-btn active" onclick="switchTab('damage')">⚔️ 피해</button>
-                    <button class="tab-btn" onclick="switchTab('utility')">🛡️ 보조</button>
-                    <button class="tab-btn" onclick="switchTab('resource')">💎 자원</button>
-                </div>
-
-                <div id="build-menu">
-                    <div class="card" data-category="damage" data-type="cannon">완두콩<br>발사대<div class="card-cost">💰 40</div></div>
-                    <div class="card" data-category="damage" data-type="shotgun">압력솥<div class="card-cost">💰 80</div></div>
-                    <div class="card" data-category="damage" data-type="mortar">코코넛<br>발사기<div class="card-cost">💰 130</div></div>
-                    <div class="card" data-category="damage" data-type="tesla">전기 구이<div class="card-cost">💰 180</div></div>
-                    <div class="card" data-category="damage" data-type="pyro">토치<div class="card-cost">💰 220</div></div>
-                    <div class="card" data-category="damage" data-type="crossbow">이쑤시개<br>발사기<div class="card-cost">💰 250</div></div>
-                    <div class="card" data-category="damage" data-type="fryer" style="display:none;">튀김기<div class="card-cost">💰 300</div></div>
-                    
-                    <div class="card" data-category="utility" data-type="sprinkler" style="display:none;">정수기<div class="card-cost">💰 50</div></div>
-                    <div class="card" data-category="utility" data-type="log" style="display:none;">밀대<div class="card-cost">💰 150</div></div>
-                    <div class="card" data-category="utility" data-type="amplifier" style="display:none;">증폭기<div class="card-cost">💰 100</div></div>
-                    <div class="card" data-category="utility" data-type="gelatin" style="display:none;">젤라틴<div class="card-cost" id="gelatin-cost-text">💰 320</div></div>
-
-                    <div class="card" data-category="resource" data-type="mine" style="display:none;">돼지<br>저금통<div class="card-cost">💰 60</div></div>
-                </div>
-
-                <div id="upgrade-menu">
-                    <div id="upgrade-info" style="font-weight: bold; color: #2c3e50; font-size:13px;">방어탑 정보</div>
-                    <div id="upgrade-details"></div>
-                    <button class="action-btn btn-upgrade" id="btn-do-upgrade">업그레이드 (💰 ?)</button>
-                    <button class="action-btn btn-action" id="btn-set-angle" style="display:none; margin-bottom:4px;">🪵 발사 방향 재설정</button>
-                    <button class="action-btn btn-sell" id="btn-sell-tower" style="margin-bottom:4px;">🔨 방어탑 판매 (💰 ?)</button>
-                    <button class="action-btn btn-cancel" id="btn-cancel-upgrade">취소</button>
-                </div>
+        <div id="angle-ui">
+            <div style="text-align:center; font-size:13px; font-weight:bold; color:#2c3e50; margin-bottom: 4px;">
+                👆 화면을 누르거나 드래그하여 방향을 바꾸세요
             </div>
-
-            <div id="angle-ui">
-                <div style="text-align:center; font-size:13px; font-weight:bold; color:#2c3e50; margin-bottom: 4px;">
-                    👆 화면을 누르거나 드래그하여 방향을 바꾸세요
-                </div>
-                <button class="action-btn btn-upgrade" style="width: 100%; height:42px; font-size:14px;" onclick="finishAngleSetting()">✅ 방향 설정 완료</button>
-            </div>
-
-            <div id="desc-ui">
-                <div class="desc-header">
-                    <div class="desc-title" id="desc-ui-title">[타워 이름]</div>
-                    <button class="btn-small" onclick="closeDescUI()">✖ 닫기</button>
-                </div>
-                <div class="desc-text" id="desc-ui-text">설명 텍스트</div>
-                <div class="desc-stats" id="desc-ui-stats">스탯 텍스트</div>
-            </div>
+            <button class="action-btn btn-upgrade" style="width: 100%; height:42px; font-size:14px;" onclick="finishAngleSetting()">✅ 방향 설정 완료</button>
         </div>
     </div>
 </div>
@@ -211,7 +166,7 @@
     const ctx = canvas.getContext('2d');
 
     const state = {
-        money: 150, hp: 1, wave: 1, isGameOver: false, isPaused: false, 
+        money: 150, hp: 1, wave: 1, isGameOver: false,
         towers: [], enemies: [], particles: [], projectiles: [],
         enemiesToSpawn: [], spawnTimer: 0, waveDelay: 3.0, isWaveActive: false,
         selectedTower: null, settingAngleMode: false, isDraggingAngle: false,
@@ -243,19 +198,6 @@
         shield:  { speed: 35, maxHp: 190, radius: 14, emoji: '🍞', reward: 15 },
         healer:  { speed: 42, maxHp: 85, radius: 13, emoji: '🥤', reward: 20 }
     };
-
-    let isMenuOpen = true;
-    window.toggleMenu = function() {
-        isMenuOpen = !isMenuOpen;
-        document.getElementById('menu-content').style.display = isMenuOpen ? 'flex' : 'none';
-        document.getElementById('menu-toggle-btn').innerText = isMenuOpen ? '▼ 닫기' : '▲ 열기';
-        setTimeout(resizeCanvas, 50);
-    };
-
-    function getScaledStat(baseVal, level, maxMultiplier = 10) {
-        if (level <= 1) return baseVal;
-        return baseVal * (1 + (maxMultiplier - 1) * (level - 1) / Math.sqrt(Math.pow(level - 1, 2) + 150));
-    }
 
     function saveGame() {
         if (state.isGameOver) return;
@@ -302,6 +244,9 @@
                             const offlineReward = Math.round(state.wave * 50 * minutes / 30);
                             if (offlineReward > 0) {
                                 state.money += offlineReward;
+                                setTimeout(() => {
+                                    alert(`💤 오프라인 방치 보상!\n\n방치 시간: ${minutes.toFixed(1)}분\n획득 골드: 💰 ${offlineReward}\n\n(수식: 현재 웨이브 * 50 * 분 / 30)`);
+                                }, 300);
                             }
                         }
                     }
@@ -349,8 +294,7 @@
         if (state.autoRetryInterval) { clearInterval(state.autoRetryInterval); state.autoRetryInterval = null; }
         if (goPrevious) state.wave = Math.max(1, state.wave - 1);
         state.hp = 1; state.enemies = []; state.projectiles = []; state.particles = [];
-        state.isGameOver = false; state.isDraggingCard = false; state.pendingGelatin = null; state.isPaused = false;
-        state.lastTime = performance.now();
+        state.isGameOver = false; state.isDraggingCard = false; state.pendingGelatin = null;
         document.getElementById('game-over-overlay').style.display = 'none';
         closeUpgradeMenu(); generateWave(state.wave); saveGame();
     };
@@ -387,154 +331,20 @@
         state.particles.push({ type, x, y, life: 1.0, ...options });
     }
 
-    // 스크롤과 드래그 분리를 위한 로직 강화
     document.querySelectorAll('.card').forEach(card => {
         const type = card.dataset.type;
-        let pressTimer = null;
-        let startX = 0, startY = 0;
-        let dragState = 0; // 0: 대기, 1: 타워 드래그 중, 2: 가로 스크롤 중
-        let isLongPress = false;
-
-        card.addEventListener('touchstart', (e) => {
-            let touch = e.touches[0];
-            startX = touch.clientX;
-            startY = touch.clientY;
-            dragState = 0; isLongPress = false;
-            
-            // 담백한 설명 팝업 열기 (돈이 부족해도 길게 누르면 확인 가능)
-            pressTimer = setTimeout(() => {
-                isLongPress = true;
-                showTowerDescription(type);
-            }, 400); 
-        }, {passive: true});
-
-        card.addEventListener('touchmove', (e) => {
-            let touch = e.touches[0];
-            let dx = touch.clientX - startX;
-            let dy = touch.clientY - startY;
-            let cost = TOWER_DEFS[type].cost;
-            if (type === 'gelatin' && state.pendingGelatin) cost = 0;
-            
-            if (dragState === 0 && Math.hypot(dx, dy) > 8) {
-                clearTimeout(pressTimer);
-                // 세로로 드래그하고, 돈이 충분하며, 게임 오버가 아닐 때만 건설 카드 잡기
-                if (Math.abs(dy) > Math.abs(dx) && state.money >= cost && !state.isGameOver) {
-                    dragState = 1; 
-                    state.isDraggingCard = true;
-                    state.dragCardType = type;
-                    closeUpgradeMenu();
-                    updateDragPos(e);
-                } else {
-                    // 가로 방향이거나 돈이 없으면 캔버스 스크롤 허용
-                    dragState = 2;
-                }
+        const startDrag = (e) => {
+            let currentCost = TOWER_DEFS[type].cost;
+            if (type === 'gelatin' && state.pendingGelatin) {
+                currentCost = 0;
             }
-            
-            if (dragState === 1) {
-                e.preventDefault(); // 타워 배치 중일 때만 브라우저 스크롤 중지
-                updateDragPos(e);
-            }
-        }, {passive: false});
-
-        card.addEventListener('touchend', (e) => { clearTimeout(pressTimer); });
-        card.addEventListener('touchcancel', (e) => { clearTimeout(pressTimer); });
-
-        // PC 마우스용 이벤트
-        card.addEventListener('mousedown', (e) => {
-            if (state.isGameOver) return;
-            startX = e.clientX; startY = e.clientY; dragState = 0; isLongPress = false;
-            pressTimer = setTimeout(() => { isLongPress = true; showTowerDescription(type); }, 400);
-        });
-        card.addEventListener('mousemove', (e) => {
-            let dx = e.clientX - startX; let dy = e.clientY - startY;
-            let cost = TOWER_DEFS[type].cost; if (type === 'gelatin' && state.pendingGelatin) cost = 0;
-            if (dragState === 0 && Math.hypot(dx, dy) > 8) {
-                clearTimeout(pressTimer);
-                if (Math.abs(dy) > Math.abs(dx) && state.money >= cost) {
-                    dragState = 1; state.isDraggingCard = true; state.dragCardType = type; closeUpgradeMenu(); updateDragPos(e);
-                } else { dragState = 2; }
-            }
-        });
-        card.addEventListener('mouseup', () => clearTimeout(pressTimer));
-        card.addEventListener('mouseleave', () => clearTimeout(pressTimer));
+            if (state.isGameOver || state.money < currentCost) return;
+            state.isDraggingCard = true; state.dragCardType = type;
+            closeUpgradeMenu(); updateDragPos(e);
+        };
+        card.addEventListener('mousedown', startDrag);
+        card.addEventListener('touchstart', (e) => { e.preventDefault(); startDrag(e.touches[0]); }, {passive: false});
     });
-
-    window.showTowerDescription = function(type) {
-        state.isDraggingCard = false; state.dragCardType = null;
-        state.isPaused = true; 
-        const def = TOWER_DEFS[type];
-        
-        document.getElementById('desc-ui-title').innerText = `[${def.name}]`;
-        
-        let desc = ""; let stats = "";
-        switch(type) {
-            case 'mine':
-                desc = "일정 시간마다 자동으로 골드를 생산합니다.\n(업그레이드 시 생산 속도 크게 증가)";
-                stats = `생산량: ${def.prod}G\n대기시간: ${def.cooldownMax.toFixed(1)}초`;
-                break;
-            case 'cannon':
-                desc = "단일 적을 추적하며 완두콩을 사격하는 가장 기본적인 타워입니다.";
-                stats = `피해량: ${def.damage}\n사거리: ${def.range}\n공격주기: ${def.cooldownMax.toFixed(1)}초`;
-                break;
-            case 'shotgun':
-                desc = "사거리는 짧지만 전방 넓은 구역에 막강한 스플래시 광역 피해를 뿌립니다.";
-                stats = `피해량: ${def.damage}\n사거리: ${def.range}\n공격주기: ${def.cooldownMax.toFixed(1)}초`;
-                break;
-            case 'mortar':
-                desc = "포물선으로 폭탄을 쏘아 올려 착지 부근의 모든 적에게 광역 피해를 입힙니다.";
-                stats = `피해량: ${def.damage}\n사거리: ${def.range}\n공격주기: ${def.cooldownMax.toFixed(1)}초`;
-                break;
-            case 'sprinkler':
-                desc = "피해는 입히지 않으나 넓은 범위의 적을 젖음 상태로 만들어 이동 속도를 감소시킵니다.";
-                stats = `효과: 이동속도 둔화 & 젖음 상태\n사거리: ${def.range}`;
-                break;
-            case 'tesla':
-                desc = "체인 라이트닝으로 적들을 마비시킵니다.\n대상이 젖어있을 경우 피해량이 대폭 오르고 전이됩니다.";
-                stats = `피해량: ${def.damage}\n기절시간: ${(def.stunDuration || 0.5).toFixed(1)}초\n공격주기: ${def.cooldownMax.toFixed(1)}초`;
-                break;
-            case 'log':
-                desc = "지정한 각도로 통나무 밀대를 굴려 무제한 관통하며 닿는 적들을 밀어냅니다.";
-                stats = `효과: 무한 관통 & 넉백\n발사주기: ${def.cooldownMax.toFixed(1)}초`;
-                break;
-            case 'pyro':
-                desc = "단일 대상에게 고열의 레이저를 쏘아 지속 가열하여 누적될수록 막대한 틱 데미지를 줍니다.";
-                stats = `기본피해: ${def.damage.toFixed(2)} (최대 +10)\n사거리: ${def.range}`;
-                break;
-            case 'crossbow':
-                desc = "초장거리에서 압도적인 속도로 연사하여 먼 거리의 적을 저격합니다.";
-                stats = `피해량: ${def.damage}\n사거리: ${def.range}\n공격주기: ${def.cooldownMax.toFixed(1)}초`;
-                break;
-            case 'amplifier':
-                desc = "범위 내 모든 아군 타워의 연사 속도를 강화합니다. 이 효과는 타워별로 무한히 중첩됩니다.";
-                stats = `강화 버프: 공격 속도 +10%\n효과 범위: ${def.range}`;
-                break;
-            case 'fryer':
-                desc = "가로 방향으로 넓은 끓는 기름 파도를 쏟아 초기 큰 피해를 입히고, 일정 시간 둔화와 지속 화상 피해를 주는 기름 장판을 남깁니다.";
-                stats = `초기피해: ${def.damage} | 틱당 화상: ${def.damage*0.1}\n효과: 이동속도 둔화 장판 (4초)\n대기시간: ${def.cooldownMax.toFixed(1)}초`;
-                break;
-            case 'gelatin':
-                desc = "두 지점에 설치해 젤라틴 막을 연결합니다. 적이 이 막을 통과하려 하면 위로 강하게 튕겨냅니다.";
-                stats = `내구도: 7회 충돌 시 파괴\n재생성: 8초 후 자동 복구`;
-                break;
-        }
-        
-        document.getElementById('desc-ui-text').innerText = desc;
-        document.getElementById('desc-ui-stats').innerText = stats;
-
-        document.getElementById('normal-bottom').style.display = 'none';
-        document.getElementById('upgrade-menu').style.display = 'none';
-        document.getElementById('angle-ui').style.display = 'none';
-        document.getElementById('desc-ui').style.display = 'flex';
-    };
-
-    window.closeDescUI = function() {
-        document.getElementById('desc-ui').style.display = 'none';
-        document.getElementById('normal-bottom').style.display = 'flex';
-        document.getElementById('upgrade-menu').style.display = 'none';
-        document.getElementById('angle-ui').style.display = 'none';
-        state.isPaused = false;
-        state.lastTime = performance.now();
-    };
 
     function updateDragPos(e) {
         if (!state.isDraggingCard) return;
@@ -624,8 +434,9 @@
     function buildTower(type, x, y) {
         let def = TOWER_DEFS[type];
         let cost = def.cost;
-        if (type === 'gelatin' && state.pendingGelatin) cost = 0;
-        
+        if (type === 'gelatin' && state.pendingGelatin) {
+            cost = 0;
+        }
         state.money -= cost;
         let newTower = {
             x: x, y: y, type: type, level: 1, cooldown: 0, laserCharge: 0, searchDelay: 0,
@@ -636,11 +447,20 @@
 
         if (type === 'gelatin') {
             if (!state.pendingGelatin) {
-                newTower.isCompleted = false; newTower.partner = null; newTower.collisions = 0; newTower.inactiveTimer = 0;
+                newTower.isCompleted = false;
+                newTower.partner = null;
+                newTower.collisions = 0;
+                newTower.inactiveTimer = 0;
                 state.pendingGelatin = newTower;
             } else {
-                newTower.isCompleted = true; newTower.partner = state.pendingGelatin; newTower.collisions = 0; newTower.inactiveTimer = 0;
-                state.pendingGelatin.isCompleted = true; state.pendingGelatin.partner = newTower; state.pendingGelatin = null;
+                newTower.isCompleted = true;
+                newTower.partner = state.pendingGelatin;
+                newTower.collisions = 0;
+                newTower.inactiveTimer = 0;
+
+                state.pendingGelatin.isCompleted = true;
+                state.pendingGelatin.partner = newTower;
+                state.pendingGelatin = null;
             }
         }
 
@@ -688,8 +508,6 @@
 
     function openUpgradeMenu(tower) {
         state.selectedTower = tower;
-        document.getElementById('desc-ui').style.display = 'none';
-        document.getElementById('normal-bottom').style.display = 'flex';
         document.getElementById('tab-menu').style.display = 'none';
         document.getElementById('build-menu').style.display = 'none';
         document.getElementById('upgrade-menu').style.display = 'flex';
@@ -721,8 +539,8 @@
             detailsHtml += `<div class="stat-row"><span>골드 생산량:</span> <span>💰 ${t.prod} ➡️ <span class="stat-up">💰 ${t.prod + 1}</span></span></div>`;
             detailsHtml += `<div class="stat-row"><span>생산 대기시간:</span> <span>${t.cooldownMax.toFixed(2)}초 ➡️ <span class="stat-up">${Math.max(1.0, t.cooldownMax * 0.9).toFixed(2)}초</span></span></div>`;
         } else if (t.type === 'amplifier') {
-            let curBuff = 10 + (t.level - 1) * 5; let nextBuff = curBuff + 5;
-            detailsHtml += `<div class="stat-row"><span>공격 속도 증가:</span> <span>📈 +${curBuff}% ➡️ <span class="stat-up">📈 +${nextBuff}%</span></span></div>`;
+            let curBuff = Math.min(50, 10 + (t.level - 1) * 5); let nextBuff = Math.min(50, curBuff + 5); let cap = nextBuff >= 50 ? ' (MAX)' : '';
+            detailsHtml += `<div class="stat-row"><span>공격 속도 증가:</span> <span>📈 +${curBuff}% ➡️ <span class="stat-up">📈 +${nextBuff}%${cap}</span></span></div>`;
             detailsHtml += `<div class="stat-row"><span>강화 사거리:</span> <span>📏 ${t.range} ➡️ <span class="stat-up">📏 ${t.range + 15}</span></span></div>`;
         } else if (t.type === 'gelatin') {
             let curRegen = Math.max(3.0, 8.0 - (t.level - 1) * 0.5).toFixed(1);
@@ -732,11 +550,7 @@
         } else {
             if (t.type !== 'sprinkler' && t.type !== 'log') {
                 let nextDmg = t.damage + Math.max(1, Math.floor(t.damage * 0.35));
-                if (t.type === 'pyro') {
-                    detailsHtml += `<div class="stat-row"><span>기본 피해량:</span> <span>⚔️ ${t.damage.toFixed(2)} ~ ${(t.damage+10).toFixed(2)} ➡️ <span class="stat-up">⚔️ ${nextDmg} ~ ${nextDmg+10}</span></span></div>`;
-                } else {
-                    detailsHtml += `<div class="stat-row"><span>기본 피해량:</span> <span>⚔️ ${Number.isInteger(t.damage) ? t.damage : t.damage.toFixed(2)} ➡️ <span class="stat-up">⚔️ ${Number.isInteger(nextDmg) ? nextDmg : nextDmg.toFixed(2)}</span></span></div>`;
-                }
+                detailsHtml += `<div class="stat-row"><span>기본 피해량:</span> <span>⚔️ ${Number.isInteger(t.damage) ? t.damage : t.damage.toFixed(2)} ➡️ <span class="stat-up">⚔️ ${Number.isInteger(nextDmg) ? nextDmg : nextDmg.toFixed(2)}</span></span></div>`;
             } else if (t.type === 'log') {
                 let curDist = 200 + (t.level * 80); let nextDist = 200 + ((t.level + 1) * 80);
                 detailsHtml += `<div class="stat-row"><span>굴러가는 거리:</span> <span>📏 ${curDist} ➡️ <span class="stat-up">📏 ${nextDist}</span></span></div>`;
@@ -746,11 +560,11 @@
             let speedMult = 1.0;
             state.towers.forEach(other => {
                 if (other.type === 'amplifier' && Math.hypot(t.x - other.x, t.y - other.y) <= other.range) {
-                    speedMult += (0.10 + (other.level - 1) * 0.05);
+                    speedMult = Math.max(speedMult, 1 + Math.min(0.5, 0.10 + (other.level - 1) * 0.05));
                 }
             });
-            let curSpeed = (t.cooldownMax / speedMult).toFixed(2); let nextSpeed = (Math.max(0.01, t.cooldownMax * 0.9) / speedMult).toFixed(2);
-            let buffTag = speedMult > 1.0 ? ' <span style="color:#f39c12; font-size:10px;">(강화)</span>' : '';
+            let curSpeed = (t.cooldownMax / speedMult).toFixed(2); let nextSpeed = (Math.max(0.1, t.cooldownMax * 0.9) / speedMult).toFixed(2);
+            let buffTag = speedMult > 1.0 ? ' <span style="color:#f39c12; font-size:10px;">(강화됨)</span>' : '';
             detailsHtml += `<div class="stat-row"><span>공격 대기시간:</span> <span>⏱️ ${curSpeed}초${buffTag} ➡️ <span class="stat-up">${nextSpeed}초</span></span></div>`;
         }
         document.getElementById('upgrade-details').innerHTML = detailsHtml;
@@ -767,7 +581,7 @@
                 if (t.type === 'tesla') t.stunDuration = Math.min(1.8, (t.stunDuration || 0.5) + 0.25);
             }
             if (t.range > 0) t.range += 15;
-            if (t.type !== 'amplifier' && t.type !== 'gelatin') t.cooldownMax = Math.max(0.01, t.cooldownMax * 0.9);
+            if (t.type !== 'amplifier' && t.type !== 'gelatin') t.cooldownMax = Math.max(0.1, t.cooldownMax * 0.9);
             
             if (t.type === 'gelatin' && t.partner) {
                 t.partner.level = t.level;
@@ -788,9 +602,13 @@
         if (t.type === 'gelatin') {
             if (t.partner) {
                 let partnerIndex = state.towers.indexOf(t.partner);
-                if (partnerIndex > -1) state.towers.splice(partnerIndex, 1);
+                if (partnerIndex > -1) {
+                    state.towers.splice(partnerIndex, 1);
+                }
             }
-            if (state.pendingGelatin === t) state.pendingGelatin = null;
+            if (state.pendingGelatin === t) {
+                state.pendingGelatin = null;
+            }
         }
 
         let index = state.towers.indexOf(t); if(index > -1) state.towers.splice(index, 1);
@@ -799,16 +617,34 @@
     document.getElementById('btn-sell-tower').addEventListener('touchstart', handleSellTouch, {passive:false});
     document.getElementById('btn-sell-tower').addEventListener('click', handleSellTouch);
 
+    const handleSetAngleTouch = (e) => {
+        e.preventDefault();
+        if (state.selectedTower && state.selectedTower.type === 'log') {
+            state.settingAngleMode = true;
+            document.getElementById('normal-bottom').style.display = 'none';
+            document.getElementById('angle-ui').style.display = 'flex';
+        }
+    };
+    document.getElementById('btn-set-angle').addEventListener('touchstart', handleSetAngleTouch, {passive:false});
+    document.getElementById('btn-set-angle').addEventListener('click', handleSetAngleTouch);
+
+    window.finishAngleSetting = function() {
+        state.settingAngleMode = false; state.isDraggingAngle = false;
+        document.getElementById('normal-bottom').style.display = 'flex';
+        document.getElementById('angle-ui').style.display = 'none';
+        if(state.selectedTower) createParticle('text', state.selectedTower.x, state.selectedTower.y, { text: '방향 저장됨!', color: '#27ae60' });
+        saveGame(); setTimeout(resizeCanvas, 5);
+    };
+
+    const handleCancelTouch = (e) => { e.preventDefault(); closeUpgradeMenu(); };
+    document.getElementById('btn-cancel-upgrade').addEventListener('touchstart', handleCancelTouch, {passive:false});
+    document.getElementById('btn-cancel-upgrade').addEventListener('click', handleCancelTouch);
+
     function applyDamageToEnemy(target, baseDamage) {
         let reduction = 0;
         state.enemies.forEach(e => {
             if (e.type === 'shield' && e.hp > 0 && Math.hypot(e.x - target.x, e.y - target.y) <= 70) reduction = 0.25; 
         });
-        if (baseDamage > 0) {
-            for(let k=0; k<3; k++) {
-                createParticle('spark', target.x, target.y, { vx: (Math.random() - 0.5) * 200, vy: (Math.random() - 0.5) * 200, color: Math.random() > 0.5 ? '#f1c40f' : '#e74c3c' });
-            }
-        }
         if (reduction > 0 && baseDamage > 0) createParticle('splash', target.x, target.y, { radius: 15, color: 'rgba(52, 152, 219, 0.4)' }); 
         target.hp -= baseDamage * (1 - reduction);
     }
@@ -817,11 +653,8 @@
         const checkPathX = canvas.width / 2;
 
         for (let i = state.particles.length - 1; i >= 0; i--) {
-            let p = state.particles[i];
-            p.life -= dt * 2;
-            if (p.vx) p.x += p.vx * dt;
-            if (p.vy) p.y += p.vy * dt;
-            if (p.life <= 0) state.particles.splice(i, 1);
+            state.particles[i].life -= dt * 2;
+            if (state.particles[i].life <= 0) state.particles.splice(i, 1);
         }
 
         if (state.isGameOver) return; 
@@ -837,7 +670,8 @@
                 let gelCard = document.getElementById('gelatin-cost-text');
                 if (gelCard) {
                     if (state.pendingGelatin) {
-                        cost = 0; gelCard.innerText = '💰 0 (연결)';
+                        cost = 0;
+                        gelCard.innerText = '💰 0 (연결)';
                     } else {
                         gelCard.innerText = `💰 ${TOWER_DEFS.gelatin.cost}`;
                     }
@@ -961,33 +795,20 @@
                         }
                     }
                 });
-            } else if (p.type === 'oil_wave_new') {
-                // 기름 파도 팽창 진행
-                if (p.progress < p.maxProgress) { p.progress += 400 * dt; }
-                p.life -= dt;
-                if (p.life <= 0) { state.projectiles.splice(i, 1); continue; }
-
-                if (Math.random() < 0.2) {
-                    createParticle('splash', p.x + p.dirX * Math.random() * p.progress, p.y + (Math.random() - 0.5) * p.width, { radius: 6, color: 'rgba(230, 126, 34, 0.8)' });
+            } else if (p.type === 'oil_wave') {
+                let moveStep = p.speed * dt; p.distance += moveStep;
+                if (p.distance > p.maxDistance) { state.projectiles.splice(i, 1); continue; }
+                p.x += Math.cos(p.angle) * moveStep; p.y += Math.sin(p.angle) * moveStep;
+                if (Math.random() < 0.45) {
+                    createParticle('splash', p.x, p.y + (Math.random() - 0.5) * 12, { radius: 12, color: 'rgba(230, 126, 34, 0.5)' });
                 }
-
-                // 범위 내 적 타격 (기본 대미지는 1회, 틱 대미지는 1초마다)
                 state.enemies.forEach(e => {
-                    let left = p.dirX === 1 ? p.x : p.x - p.progress;
-                    let right = p.dirX === 1 ? p.x + p.progress : p.x;
-                    let top = p.y - p.width / 2;
-                    let bottom = p.y + p.width / 2;
-                    
-                    if (e.x > left && e.x < right && e.y > top && e.y < bottom) {
+                    if (Math.hypot(e.x - p.x, e.y - p.y) < e.radius + 18) {
                         if (!p.hitList.includes(e)) {
-                            p.hitList.push(e); applyDamageToEnemy(e, p.initialDamage);
+                            p.hitList.push(e); applyDamageToEnemy(e, p.damage);
+                            e.oilTimer = 3.0; 
+                            createParticle('text', e.x, e.y, { text: '🔥 기름!', color: '#d35400' });
                         }
-                        if (!e.lastOilTick || Date.now() - e.lastOilTick > 1000) {
-                            applyDamageToEnemy(e, p.tickDamage);
-                            e.lastOilTick = Date.now();
-                            createParticle('text', e.x, e.y, { text: '🔥', color: '#d35400' });
-                        }
-                        e.oilTimer = 3.0; // 둔화
                     }
                 });
             }
@@ -997,7 +818,7 @@
             let speedMult = 1.0;
             state.towers.forEach(other => {
                 if (other.type === 'amplifier' && Math.hypot(t.x - other.x, t.y - other.y) <= other.range) {
-                    speedMult += (0.10 + (other.level - 1) * 0.05); // 증폭기 중첩
+                    speedMult = Math.max(speedMult, 1 + Math.min(0.5, 0.10 + (other.level - 1) * 0.05));
                 }
             });
             
@@ -1014,9 +835,11 @@
             if (t.type === 'gelatin') {
                 if (t.isCompleted && t.partner && t.x < t.partner.x) {
                     if (t.inactiveTimer > 0) {
-                        t.inactiveTimer -= dt; t.partner.inactiveTimer = t.inactiveTimer;
+                        t.inactiveTimer -= dt;
+                        t.partner.inactiveTimer = t.inactiveTimer;
                         if (t.inactiveTimer <= 0) {
-                            t.collisions = 0; t.partner.collisions = 0;
+                            t.collisions = 0;
+                            t.partner.collisions = 0;
                             createParticle('text', (t.x + t.partner.x)/2, (t.y + t.partner.y)/2, { text: '젤라틴 재생성!', color: '#2ecc71' });
                         }
                     } else {
@@ -1024,13 +847,21 @@
                             if (!e.lastGelatinBounce || Date.now() - e.lastGelatinBounce > 800) {
                                 let dist = distToSegment(e, t, t.partner);
                                 if (dist < (e.radius + 6)) {
-                                    e.kbVelocity = 140; e.stunTimer = 0.5; e.lastGelatinBounce = Date.now();
-                                    t.collisions++; t.partner.collisions = t.collisions;
+                                    e.kbVelocity = 140;
+                                    e.stunTimer = 0.5;
+                                    e.lastGelatinBounce = Date.now();
+                                    
+                                    t.collisions++;
+                                    t.partner.collisions = t.collisions;
+                                    
                                     createParticle('splash', e.x, e.y, { radius: 25, color: 'rgba(155, 89, 182, 0.6)' });
                                     createParticle('text', e.x, e.y, { text: '🍮 튕김!', color: '#9b59b6' });
-                                    if (t.collisions >= 7) {
+                                    
+                                    let maxCollisions = 7;
+                                    if (t.collisions >= maxCollisions) {
                                         let regenTime = Math.max(3.0, 8.0 - (t.level - 1) * 0.5);
-                                        t.inactiveTimer = regenTime; t.partner.inactiveTimer = regenTime;
+                                        t.inactiveTimer = regenTime;
+                                        t.partner.inactiveTimer = regenTime;
                                         createParticle('text', (t.x + t.partner.x)/2, (t.y + t.partner.y)/2, { text: '젤라틴 파괴!', color: '#e74c3c' });
                                     }
                                 }
@@ -1044,20 +875,26 @@
             if (t.type === 'fryer') {
                 if (t.cooldown <= 0) {
                     t.cooldown = t.cooldownMax;
-                    let dir = t.x < canvas.width / 2 ? 1 : -1;
-                    state.projectiles.push({ type: 'oil_wave_new', x: t.x, y: t.y, dirX: dir, progress: 0, maxProgress: 260, width: 70, life: 4.0, initialDamage: t.damage, tickDamage: t.damage * 0.1, hitList: [] });
+                    let angle = t.x < canvas.width / 2 ? 0 : Math.PI;
+                    state.projectiles.push({ type: 'oil_wave', x: t.x, y: t.y, speed: 180, angle: angle, damage: t.damage, hitList: [], distance: 0, maxDistance: 240, rotation: 0 });
                 }
                 return;
             }
 
             if (t.type === 'pyro') {
                 let targetValid = t.currentTarget && state.enemies.includes(t.currentTarget) && Math.hypot(t.x - t.currentTarget.x, t.y - t.currentTarget.y) <= t.range;
+                
                 if (!targetValid) {
-                    if (t.currentTarget !== null) { t.currentTarget = null; t.searchDelay = 0.4; t.laserCharge = 0; t.isFiring = false; }
+                    if (t.currentTarget !== null) {
+                        t.currentTarget = null; t.searchDelay = 0.4; 
+                        t.laserCharge = 0; t.isFiring = false;
+                    }
                 }
+                
                 if (!t.currentTarget) {
-                    if (t.searchDelay > 0) t.searchDelay -= dt;
-                    else {
+                    if (t.searchDelay > 0) {
+                        t.searchDelay -= dt;
+                    } else {
                         let minDist = t.range; let newTarget = null;
                         state.enemies.forEach(e => {
                             let d = Math.hypot(t.x - e.x, t.y - e.y);
@@ -1066,12 +903,16 @@
                         if (newTarget) t.currentTarget = newTarget;
                     }
                 }
+
                 if (t.currentTarget) {
                     t.laserCharge = Math.min(10, t.laserCharge + dt * 3.5); t.isFiring = true;
                     t.beamTx = t.currentTarget.x; t.beamTy = t.currentTarget.y;
                     t.targetAngle = Math.atan2(t.currentTarget.y - t.y, t.currentTarget.x - t.x);
-                    if (t.cooldown <= 0) { applyDamageToEnemy(t.currentTarget, t.damage + Math.floor(t.laserCharge)); t.cooldown = t.cooldownMax; }
+                    if (t.cooldown <= 0) {
+                        applyDamageToEnemy(t.currentTarget, t.damage + Math.floor(t.laserCharge)); t.cooldown = t.cooldownMax;
+                    }
                 }
+                
                 if (t.currentAngle !== undefined && t.currentTarget) {
                     let diff = t.targetAngle - t.currentAngle;
                     while (diff < -Math.PI) diff += Math.PI * 2;
@@ -1086,6 +927,7 @@
                 if (Math.hypot(t.x - t.currentTarget.x, t.y - t.currentTarget.y) <= t.range) target = t.currentTarget;
                 else { t.laserCharge = 0; t.currentTarget = null; }
             }
+
             if (!target && t.range > 0) {
                 let minDist = t.range;
                 state.enemies.forEach(e => {
@@ -1095,7 +937,9 @@
                 t.currentTarget = target;
             }
 
-            if (target && t.type !== 'sprinkler' && t.type !== 'log' && t.type !== 'tesla') t.targetAngle = Math.atan2(target.y - t.y, target.x - t.x);
+            if (target && t.type !== 'sprinkler' && t.type !== 'log' && t.type !== 'tesla') {
+                t.targetAngle = Math.atan2(target.y - t.y, target.x - t.x);
+            }
             if (t.currentAngle !== undefined) {
                 let diff = t.targetAngle - t.currentAngle;
                 while (diff < -Math.PI) diff += Math.PI * 2;
@@ -1203,9 +1047,18 @@
                 ctx.fillStyle = '#f39c12'; ctx.beginPath(); ctx.arc(-2, 0, 4, 0, Math.PI*2); ctx.fill();
                 break;
             case 'gelatin':
-                ctx.fillStyle = '#9b59b6'; ctx.beginPath(); ctx.moveTo(-6, 8); ctx.lineTo(-4, -6);
-                ctx.quadraticCurveTo(0, -10, 4, -6); ctx.lineTo(6, 8); ctx.closePath(); ctx.fill();
-                ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.beginPath(); ctx.ellipse(-2, -2, 2, 4, Math.PI/4, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = '#9b59b6';
+                ctx.beginPath();
+                ctx.moveTo(-6, 8);
+                ctx.lineTo(-4, -6);
+                ctx.quadraticCurveTo(0, -10, 4, -6);
+                ctx.lineTo(6, 8);
+                ctx.closePath();
+                ctx.fill();
+                ctx.fillStyle = 'rgba(255,255,255,0.4)';
+                ctx.beginPath();
+                ctx.ellipse(-2, -2, 2, 4, Math.PI/4, 0, Math.PI*2);
+                ctx.fill();
                 break;
         }
     }
@@ -1244,34 +1097,30 @@
             ctx.arc(checkPathX + 2, y - 10, 3, 0, Math.PI * 2); ctx.fill();
         }
 
-        // Projectile rendering First (puddles in background)
-        state.projectiles.forEach(p => {
-            if (p.type === 'oil_wave_new') {
-                ctx.save();
-                let alpha = Math.min(1, p.life);
-                ctx.globalAlpha = alpha * 0.8;
-                let w = p.progress; let h = p.width;
-                let drawX = p.dirX === 1 ? p.x : p.x - w; let drawY = p.y - h/2;
-                
-                ctx.fillStyle = '#e67e22'; 
-                ctx.beginPath(); ctx.roundRect(drawX, drawY, w, h, 10); ctx.fill();
-                ctx.fillStyle = '#f39c12';
-                ctx.beginPath(); ctx.roundRect(drawX+2, drawY+2, w-4, h-4, 8); ctx.fill();
-                ctx.restore();
-            }
-        });
-
         state.towers.forEach(t => {
             if (t.type === 'gelatin' && t.isCompleted && t.partner && t.x < t.partner.x) {
-                ctx.save(); ctx.beginPath(); ctx.moveTo(t.x, t.y); ctx.lineTo(t.partner.x, t.partner.y);
+                ctx.save();
+                ctx.beginPath();
+                ctx.moveTo(t.x, t.y);
+                ctx.lineTo(t.partner.x, t.partner.y);
+                
                 if (t.inactiveTimer > 0) {
-                    ctx.strokeStyle = 'rgba(155, 89, 182, 0.2)'; ctx.lineWidth = 3; ctx.setLineDash([4, 4]); ctx.stroke();
+                    ctx.strokeStyle = 'rgba(155, 89, 182, 0.2)';
+                    ctx.lineWidth = 3;
+                    ctx.setLineDash([4, 4]);
+                    ctx.stroke();
                 } else {
                     let pulse = Math.sin(Date.now() * 0.015) * 1.5;
-                    ctx.strokeStyle = 'rgba(155, 89, 182, 0.5)'; ctx.lineWidth = 8 + pulse; ctx.stroke();
-                    ctx.strokeStyle = 'rgba(215, 189, 226, 0.8)'; ctx.lineWidth = 2.5; ctx.stroke();
+                    ctx.strokeStyle = 'rgba(155, 89, 182, 0.5)';
+                    ctx.lineWidth = 8 + pulse;
+                    ctx.stroke();
+                    
+                    ctx.strokeStyle = 'rgba(215, 189, 226, 0.8)';
+                    ctx.lineWidth = 2.5;
+                    ctx.stroke();
                 }
-                ctx.setLineDash([]); ctx.restore();
+                ctx.setLineDash([]);
+                ctx.restore();
             }
         });
 
@@ -1283,17 +1132,16 @@
 
             if (t.type === 'pyro' && t.isFiring) {
                 ctx.save(); ctx.beginPath(); ctx.moveTo(t.x, t.y); ctx.lineTo(t.beamTx, t.beamTy);
-                ctx.shadowBlur = 10; ctx.shadowColor = '#e67e22'; 
                 ctx.strokeStyle = 'rgba(230, 126, 34, 0.35)'; ctx.lineWidth = t.laserCharge + 8 + Math.sin(Date.now() * 0.06) * 3; ctx.stroke();
                 ctx.strokeStyle = '#e67e22'; ctx.lineWidth = t.laserCharge + 3; ctx.stroke();
-                ctx.strokeStyle = '#f1c40f'; ctx.lineWidth = t.laserCharge / 2 + 1; ctx.stroke(); ctx.shadowBlur = 0; ctx.restore();
+                ctx.strokeStyle = '#f1c40f'; ctx.lineWidth = t.laserCharge / 2 + 1; ctx.stroke(); ctx.restore();
             }
 
             ctx.beginPath(); ctx.arc(t.x, t.y, t.radius, 0, Math.PI * 2);
             ctx.fillStyle = t.color; ctx.fill(); ctx.strokeStyle = '#2c3e50'; ctx.lineWidth = 2.5; ctx.stroke();
 
             ctx.save(); ctx.translate(t.x, t.y);
-            let renderAngle = t.type === 'log' || t.type === 'fryer' ? t.angle : (t.currentAngle !== undefined ? t.currentAngle : 0);
+            let renderAngle = t.type === 'log' ? t.angle : (t.currentAngle !== undefined ? t.currentAngle : 0);
             drawTowerDesign(ctx, t.type, renderAngle, t);
             ctx.restore();
 
@@ -1323,13 +1171,18 @@
             ctx.save();
             if (state.dragCardType === 'gelatin' && state.pendingGelatin && !isCanceled) {
                 ctx.beginPath(); ctx.arc(state.pendingGelatin.x, state.pendingGelatin.y, 160, 0, Math.PI * 2);
-                ctx.fillStyle = 'rgba(155, 89, 182, 0.08)'; ctx.fill(); ctx.strokeStyle = 'rgba(155, 89, 182, 0.3)'; ctx.lineWidth = 1; ctx.stroke();
+                ctx.fillStyle = 'rgba(155, 89, 182, 0.08)'; ctx.fill();
+                ctx.strokeStyle = 'rgba(155, 89, 182, 0.3)'; ctx.lineWidth = 1; ctx.stroke();
                 
-                ctx.beginPath(); ctx.moveTo(state.pendingGelatin.x, state.pendingGelatin.y); ctx.lineTo(px, py);
+                ctx.beginPath(); ctx.moveTo(state.pendingGelatin.x, state.pendingGelatin.y);
+                ctx.lineTo(px, py);
                 let d = Math.hypot(state.pendingGelatin.x - px, state.pendingGelatin.y - py);
                 let isValidPair = d <= 160 && d >= 40 && !isLineNearAnyTower(state.pendingGelatin.x, state.pendingGelatin.y, px, py, state.pendingGelatin, null);
                 ctx.strokeStyle = isValidPair ? 'rgba(155, 89, 182, 0.6)' : 'rgba(231, 76, 60, 0.6)';
-                ctx.lineWidth = 3; ctx.setLineDash([4, 4]); ctx.stroke(); ctx.setLineDash([]);
+                ctx.lineWidth = 3;
+                ctx.setLineDash([4, 4]);
+                ctx.stroke();
+                ctx.setLineDash([]);
             } else if (def.range > 0 && !isCanceled) {
                 ctx.beginPath(); ctx.arc(px, py, def.range, 0, Math.PI * 2);
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.15)'; ctx.fill();
@@ -1358,7 +1211,7 @@
             ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(e.emoji, 0, 0);
             if (e.stunTimer > 0) { ctx.font = 'bold 11px Arial'; ctx.fillText('⚡', -12, -12); }
             if (e.isWet) { ctx.font = '10px Arial'; ctx.fillText('💧', 12, -12); }
-            if (e.oilTimer > 0) { ctx.font = '11px Arial'; ctx.fillText('🔥', 12, 12); }
+            if (e.oilTimer > 0) { ctx.font = '10px Arial'; ctx.fillText('🍳', 12, 12); }
             ctx.restore();
 
             let ratio = Math.max(0, e.hp / e.maxHp);
@@ -1366,7 +1219,6 @@
             ctx.fillStyle = '#2ecc71'; ctx.fillRect(e.x - 10, e.y - e.radius - 8, 20 * ratio, 3.5);
         });
 
-        // Projectiles that draw above enemies
         state.projectiles.forEach(p => {
             if (p.type === 'cannon_ball') {
                 ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI * 2); ctx.fillStyle = '#2ecc71'; ctx.fill(); 
@@ -1383,6 +1235,11 @@
                 ctx.fillStyle = '#e1b12c'; ctx.fillRect(-6, -16, 12, 32); 
                 ctx.fillStyle = '#c23616'; ctx.fillRect(-3, -20, 6, 4); ctx.fillRect(-3, 16, 6, 4); 
                 ctx.restore();
+            } else if (p.type === 'oil_wave') {
+                ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.angle);
+                ctx.fillStyle = '#e67e22'; ctx.fillRect(-5, -12, 10, 24);
+                ctx.fillStyle = '#f39c12'; ctx.fillRect(-2, -10, 4, 20);
+                ctx.restore();
             }
         });
 
@@ -1391,27 +1248,20 @@
             if (p.type === 'text') {
                 ctx.fillStyle = p.color; ctx.font = 'bold 12px Arial';
                 ctx.textAlign = 'center'; ctx.fillText(p.text, p.x, p.y - (1 - p.life) * 15);
-            } else if (p.type === 'spark') { 
-                ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, 2.5 * p.life, 0, Math.PI*2); ctx.fill();
             } else if (p.type === 'laser') {
-                ctx.shadowBlur = 10; ctx.shadowColor = p.color; 
                 ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.tx, p.ty);
-                ctx.strokeStyle = p.color; ctx.lineWidth = p.width || 1.5; ctx.stroke(); ctx.shadowBlur = 0;
+                ctx.strokeStyle = p.color; ctx.lineWidth = p.width || 1.5; ctx.stroke();
             } else if (p.type === 'lightning') {
-                ctx.shadowBlur = 15; ctx.shadowColor = '#f1c40f'; 
                 ctx.beginPath(); ctx.moveTo(p.x, p.y);
                 let midX = (p.x + p.tx)/2 + (Math.random()-0.5)*18; let midY = (p.y + p.ty)/2 + (Math.random()-0.5)*18;
                 ctx.lineTo(midX, midY); ctx.lineTo(p.tx, p.ty);
-                ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.5; ctx.stroke();
-                ctx.strokeStyle = '#f1c40f'; ctx.lineWidth = 4.5; ctx.stroke(); ctx.shadowBlur = 0;
+                ctx.strokeStyle = '#f1c40f'; ctx.lineWidth = 2.5; ctx.stroke();
             } else if (p.type === 'splash') {
                 ctx.beginPath(); ctx.arc(p.x, p.y, p.radius * (1 - p.life), 0, Math.PI*2);
                 ctx.fillStyle = p.color || `rgba(52, 152, 219, ${p.life * 0.45})`; ctx.fill();
             } else if (p.type === 'explosion') {
                 ctx.beginPath(); ctx.arc(p.x, p.y, p.radius * (1 - p.life), 0, Math.PI*2);
                 ctx.fillStyle = `rgba(230, 126, 34, ${p.life * 0.7})`; ctx.fill();
-                ctx.beginPath(); ctx.arc(p.x, p.y, p.radius * (1 - p.life) * 0.5, 0, Math.PI*2);
-                ctx.fillStyle = `rgba(241, 196, 15, ${p.life * 0.9})`; ctx.fill();
             }
             ctx.restore();
         });
@@ -1425,9 +1275,7 @@
 
     function loop(time) {
         let dt = (time - state.lastTime) / 1000; state.lastTime = time;
-        if (dt < 0.1 && !state.isPaused) { update(dt); }
-        if (dt < 0.1) { draw(); }
-        requestAnimationFrame(loop);
+        if (dt < 0.1) { update(dt); draw(); } requestAnimationFrame(loop);
     }
     
     if (!loadGame()) { generateWave(state.wave); } else { generateWave(state.wave); }
