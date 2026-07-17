@@ -17,9 +17,20 @@
             background-color: var(--bg-color); font-family: 'Segoe UI', Tahoma, sans-serif;
             overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none;
         }
+        body.detail-open, html.detail-open {
+            overflow-y: auto;
+            touch-action: auto;
+            height: auto;
+            min-height: 100%;
+        }
         #game-wrapper {
             position: relative; width: 100%; height: 100%; max-width: 500px; margin: 0 auto;
             display: flex; flex-direction: column; background: #27ae60; overflow: hidden;
+        }
+        #game-wrapper.detail-open {
+            height: auto;
+            min-height: 100vh;
+            overflow: visible;
         }
         #top-ui {
             background: var(--panel-bg); color: var(--text-light); padding: 10px 15px;
@@ -74,10 +85,28 @@
         #card-tooltip p { margin: 0 0 8px; line-height: 1.45; color: #dfe6e9; font-size: 13px; }
         #card-tooltip .tooltip-stats { font-size: 12px; color: #bdc3c7; line-height: 1.5; }
         #build-menu, .card { touch-action: pan-x; }
-        #upgrade-menu, #angle-ui { display: none; flex-direction: column; gap: 8px; padding: 10px 12px; max-height: 52vh; overflow-y: auto; position: relative; z-index: 12; -webkit-overflow-scrolling: touch; touch-action: pan-y; }
+        #upgrade-menu, #angle-ui {
+            display: none; flex-direction: column; gap: 8px; padding: 10px 12px;
+            flex: 1 1 auto; min-height: 0; overflow-y: auto; position: relative; z-index: 12;
+            -webkit-overflow-scrolling: touch; touch-action: pan-y;
+        }
         #upgrade-menu { background: #f8f9f9; }
         #angle-ui { background: #f8f9f9; }
         #bottom-ui { min-height: 0; }
+        #bottom-ui.detail-open {
+            max-height: none;
+            overflow: visible;
+            flex: 0 0 auto;
+        }
+        #bottom-ui.detail-open #upgrade-menu,
+        #bottom-ui.detail-open #angle-ui {
+            flex: 0 0 auto;
+            max-height: none;
+            overflow: visible;
+        }
+        #bottom-ui.detail-open #normal-bottom {
+            display: none !important;
+        }
         .card {
             background: white; border: 2px solid #bdc3c7; border-radius: 8px;
             padding: 6px; width: 68px; height: 60px; text-align: center; font-size: 12px;
@@ -105,6 +134,9 @@
             .action-btn { padding: 6px 10px; font-size: 11px; width: 100%; }
             #upgrade-details { font-size: 10px; }
             #bottom-ui { max-height: 62vh; }
+            #bottom-ui.detail-open { max-height: none; }
+            #game-wrapper.detail-open { min-height: 100vh; }
+            #upgrade-menu, #angle-ui { padding: 8px 10px; gap: 6px; }
         }
         .card:active { cursor: grabbing; }
         .card.disabled { opacity: 0.4; filter: grayscale(1); }
@@ -315,16 +347,16 @@
     };
 
     const ENEMY_DEFS = {
-        goblin:  { speed: 55, maxHp: 24, radius: 12, emoji: '🐥', reward: 6 },
-        wolf:    { speed: 95, maxHp: 15, radius: 10, emoji: '🍜', reward: 5 },
-        golem:   { speed: 28, maxHp: 380, radius: 16, emoji: '🍔', reward: 28 },
-        scout:   { speed: 125, maxHp: 13, radius: 9, emoji: '🍬', reward: 4 },
-        shield:  { speed: 35, maxHp: 190, radius: 14, emoji: '🍞', reward: 15 },
-        healer:  { speed: 42, maxHp: 85, radius: 13, emoji: '🥤', reward: 20 },
-        grape:   { speed: 24, maxHp: 42, radius: 14, emoji: '🍇', reward: 10 },
-        grape_small: { speed: 30, maxHp: 16, radius: 9, emoji: '🍇', reward: 4 },
-        milk:    { speed: 32, maxHp: 72, radius: 13, emoji: '🥛', reward: 14, auraRange: 58 },
-        fries:   { speed: 30, maxHp: 24, radius: 12, emoji: '🍟', reward: 12, shieldRange: 70, shieldInterval: 5.0 }
+        goblin:  { name: '병아리', speed: 55, maxHp: 24, radius: 12, emoji: '🐥', reward: 6 },
+        wolf:    { name: '라멘', speed: 95, maxHp: 15, radius: 10, emoji: '🍜', reward: 5 },
+        golem:   { name: '햄버거', speed: 28, maxHp: 380, radius: 16, emoji: '🍔', reward: 28 },
+        scout:   { name: '사탕', speed: 125, maxHp: 13, radius: 9, emoji: '🍬', reward: 4 },
+        shield:  { name: '식빵', speed: 35, maxHp: 190, radius: 14, emoji: '🍞', reward: 15 },
+        healer:  { name: '우유', speed: 42, maxHp: 85, radius: 13, emoji: '🥤', reward: 20 },
+        grape:   { name: '포도', speed: 24, maxHp: 42, radius: 14, emoji: '🍇', reward: 10 },
+        grape_small: { name: '작은 포도', speed: 30, maxHp: 16, radius: 9, emoji: '🍇', reward: 4 },
+        milk:    { name: '우유', speed: 32, maxHp: 72, radius: 13, emoji: '🥛', reward: 14, auraRange: 58 },
+        fries:   { name: '감자튀김', speed: 30, maxHp: 24, radius: 12, emoji: '🍟', reward: 12, shieldRange: 70, shieldInterval: 5.0 }
     };
 
     const CARD_INFO = {
@@ -637,26 +669,26 @@
         const speedMultiplier = 1 + (waveNum - 1) * 0.02;
 
         const goblinCount = 5 + Math.floor(waveNum * 1.5);
-        lines.push(`🐥 병아리 x${goblinCount}`);
+            lines.push(`🐥 ${ENEMY_DEFS.goblin.name} x${goblinCount}`);
         if (waveNum >= 2) {
-            lines.push(`🍬 스카우트 x${4 + Math.floor(waveNum * 1.2)}`);
-            lines.push(`🍜 늑대 x${3 + Math.floor(waveNum * 1.0)}`);
+            lines.push(`🍬 ${ENEMY_DEFS.scout.name} x${4 + Math.floor(waveNum * 1.2)}`);
+            lines.push(`🍜 ${ENEMY_DEFS.wolf.name} x${3 + Math.floor(waveNum * 1.0)}`);
         }
         if (waveNum >= 3) {
-            lines.push(`🍞 실드 x${2 + Math.floor(waveNum * 0.8)}`);
-            lines.push(`🍔 골렘 x${Math.floor(waveNum / 2)}`);
+            lines.push(`🍞 ${ENEMY_DEFS.shield.name} x${2 + Math.floor(waveNum * 0.8)}`);
+            lines.push(`🍔 ${ENEMY_DEFS.golem.name} x${Math.floor(waveNum / 2)}`);
         }
         if (waveNum >= 4) {
-            lines.push(`🥤 힐러 x${1 + Math.floor(waveNum / 3)}`);
+            lines.push(`🥤 ${ENEMY_DEFS.healer.name} x${1 + Math.floor(waveNum / 3)}`);
         }
         if (waveNum >= 5) {
-            lines.push(`🍇 포도 x${2 + Math.floor(waveNum / 3)}`);
+            lines.push(`🍇 ${ENEMY_DEFS.grape.name} x${2 + Math.floor(waveNum / 3)}`);
         }
         if (waveNum >= 6) {
-            lines.push(`🥛 우유 x${1 + Math.floor(waveNum / 4)}`);
+            lines.push(`🥛 ${ENEMY_DEFS.milk.name} x${1 + Math.floor(waveNum / 4)}`);
         }
         if (waveNum >= 7) {
-            lines.push(`🍟 감자튀김 x${1 + Math.floor(waveNum / 4)}`);
+            lines.push(`🍟 ${ENEMY_DEFS.fries.name} x${1 + Math.floor(waveNum / 4)}`);
         }
 
         lines.push('');
@@ -891,11 +923,13 @@
                 }
             } else if (p.type === 'oil_patch') {
                 p.life -= dt;
+                p.age = (p.age || 0) + dt;
                 if (p.life <= 0) { sandbox.projectiles.splice(i, 1); continue; }
                 p.ripple += dt * 18;
+                const visibleLength = p.length * Math.min(1, p.age / (p.appearDuration || 0.7));
                 const lateral = Math.abs((e.y - p.y) * Math.cos(p.angle) - (e.x - p.x) * Math.sin(p.angle));
                 const forward = (e.x - p.x) * Math.cos(p.angle) + (e.y - p.y) * Math.sin(p.angle);
-                if (forward > 0 && forward < p.length && lateral < e.radius + p.hitWidth / 2) {
+                if (forward > 0 && forward < visibleLength && lateral < e.radius + p.hitWidth / 2) {
                     tooltipApplyDamage(e, p.damage * 0.2 * dt);
                     e.oilTimer = 1.4;
                 }
@@ -929,7 +963,7 @@
                 if (t.cooldown <= 0) {
                     t.cooldown = t.cooldownMax;
                     let angle = e.x >= t.x ? 0 : Math.PI;
-                    sandbox.projectiles.push({ type: 'oil_patch', x: t.x, y: t.y, angle, damage: t.damage * 0.7, width: 40, length: 120, hitWidth: 26, hitList: [], life: 1.8, ripple: 0, flow: 0 });
+                    sandbox.projectiles.push({ type: 'oil_patch', x: t.x, y: t.y, angle, damage: t.damage * 0.7, width: 40, length: 120, hitWidth: 26, hitList: [], life: 1.8, fadeDuration: 0.45, appearDuration: 0.7, age: 0, ripple: 0, flow: 0 });
                 }
                 return;
             }
@@ -1091,10 +1125,13 @@
                 previewCtx.save();
                 previewCtx.translate(p.x, p.y);
                 previewCtx.rotate(p.angle);
+                const visibleLength = p.length * Math.min(1, (p.age || 0) / (p.appearDuration || 0.7));
+                const alpha = Math.max(0, Math.min(1, (p.life || 0) / (p.fadeDuration || 0.45)));
+                previewCtx.globalAlpha = alpha;
                 previewCtx.fillStyle = 'rgba(243, 156, 18, 0.35)';
-                previewCtx.fillRect(0, -p.width / 2, p.length, p.width);
+                previewCtx.fillRect(0, -p.width / 2, visibleLength, p.width);
                 previewCtx.fillStyle = 'rgba(231, 76, 60, 0.24)';
-                previewCtx.fillRect(6, -p.width / 2 + 6, Math.max(0, p.length - 12), Math.max(0, p.width - 12));
+                previewCtx.fillRect(6, -p.width / 2 + 6, Math.max(0, visibleLength - 12), Math.max(0, p.width - 12));
                 previewCtx.restore();
             }
         }
@@ -1493,15 +1530,26 @@
 
     function openUpgradeMenu(tower) {
         state.selectedTower = tower;
+        document.getElementById('bottom-ui').classList.add('detail-open');
+        document.body.classList.add('detail-open');
+        document.documentElement.classList.add('detail-open');
+        document.getElementById('game-wrapper').classList.add('detail-open');
         document.getElementById('tab-menu').style.display = 'none';
         document.getElementById('build-menu').style.display = 'none';
         document.getElementById('upgrade-menu').style.display = 'flex';
         document.getElementById('btn-set-angle').style.display = tower.type === 'log' ? 'block' : 'none';
+        setTimeout(() => {
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'auto' });
+        }, 0);
         updateUpgradeUI();
     }
 
     function closeUpgradeMenu() {
         state.selectedTower = null; state.settingAngleMode = false; state.isDraggingAngle = false;
+        document.getElementById('bottom-ui').classList.remove('detail-open');
+        document.body.classList.remove('detail-open');
+        document.documentElement.classList.remove('detail-open');
+        document.getElementById('game-wrapper').classList.remove('detail-open');
         document.getElementById('normal-bottom').style.display = 'flex';
         document.getElementById('angle-ui').style.display = 'none';
         document.getElementById('tab-menu').style.display = 'flex';
@@ -1630,6 +1678,10 @@
 
     window.finishAngleSetting = function() {
         state.settingAngleMode = false; state.isDraggingAngle = false;
+        document.getElementById('bottom-ui').classList.remove('detail-open');
+        document.body.classList.remove('detail-open');
+        document.documentElement.classList.remove('detail-open');
+        document.getElementById('game-wrapper').classList.remove('detail-open');
         document.getElementById('normal-bottom').style.display = 'flex';
         document.getElementById('angle-ui').style.display = 'none';
         if(state.selectedTower) createParticle('text', state.selectedTower.x, state.selectedTower.y, { text: '방향 저장됨!', color: '#27ae60' });
@@ -1864,6 +1916,7 @@
                 });
             } else if (p.type === 'oil_patch') {
                 p.life -= dt;
+                p.age = (p.age || 0) + dt;
                 if (p.life <= 0) { state.projectiles.splice(i, 1); continue; }
                 p.flow += dt * 8;
                 p.ripple += dt * 18;
@@ -1873,7 +1926,8 @@
                 state.enemies.forEach(e => {
                     let lateral = Math.abs((e.y - p.y) * Math.cos(p.angle) - (e.x - p.x) * Math.sin(p.angle));
                     let forward = (e.x - p.x) * Math.cos(p.angle) + (e.y - p.y) * Math.sin(p.angle);
-                    if (forward > 0 && forward < p.length && lateral < e.radius + p.hitWidth / 2) {
+                    const visibleLength = p.length * Math.min(1, p.age / (p.appearDuration || 0.7));
+                    if (forward > 0 && forward < visibleLength && lateral < e.radius + p.hitWidth / 2) {
                         if (!p.hitList.includes(e)) {
                             p.hitList.push(e);
                             applyDamageToEnemy(e, p.damage * 0.32 * dt);
@@ -1953,7 +2007,7 @@
                     state.projectiles.push({
                         type: 'oil_patch', x: t.x, y: t.y, angle: angle,
                         damage: t.damage * 0.7, width: 140, length: 240, hitWidth: 70,
-                        hitList: [], life: 3.2, ripple: 0, flow: 0
+                        hitList: [], life: 3.2, fadeDuration: 0.55, appearDuration: 0.8, age: 0, ripple: 0, flow: 0
                     });
                 }
                 return;
@@ -2324,7 +2378,9 @@
             } else if (p.type === 'oil_patch') {
                 ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.angle);
                 let width = p.width || 140;
-                let height = p.length || 240;
+                let height = (p.length || 240) * Math.min(1, (p.age || 0) / (p.appearDuration || 0.8));
+                let alpha = Math.max(0, Math.min(1, (p.life || 0) / (p.fadeDuration || 0.55)));
+                ctx.globalAlpha = alpha;
                 let wobble = Math.sin(p.ripple || 0) * 8;
                 ctx.fillStyle = 'rgba(243, 156, 18, 0.35)';
                 ctx.beginPath();
