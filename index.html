@@ -34,20 +34,21 @@
         }
         #top-ui {
             background: var(--panel-bg); color: var(--text-light); padding: 10px 15px;
-            display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+            display: flex; justify-content: space-between; align-items: center; gap: 10px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.3); z-index: 10; flex-shrink: 0;
             position: relative;
         }
         .title-text {
             font-size: 20px; font-weight: 900; color: #f1c40f; 
             text-shadow: 2px 2px 0px #1a252f, -1px -1px 0px #1a252f;
-            position: static; justify-self: center; text-align: center; transform: translateX(-12px);
+            position: static; text-align: center;
             white-space: nowrap; letter-spacing: 1px;
             max-width: 100%; overflow: hidden; text-overflow: ellipsis;
         }
         .stat-box { font-size: 14px; font-weight: bold; display: flex; align-items: center; gap: 4px; }
         .wave-left { display: flex; align-items: center; gap: 6px; justify-self: start; }
         .wave-tools { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+        .title-reset-wrap { display: flex; align-items: center; gap: 8px; margin-left: auto; flex-shrink: 0; }
         #btn-wave-info {
             border: none; background: #5dade2; color: white; border-radius: 999px;
             width: 20px; height: 20px; font-size: 11px; font-weight: bold; cursor: pointer; line-height: 20px;
@@ -133,6 +134,7 @@
             .stat-box, .money-text { font-size: 13px; }
             .wave-tools { gap: 4px; }
             #wave-select { font-size: 11px; height: 26px; padding: 3px 5px; }
+            .title-reset-wrap { gap: 6px; }
             #shop-header { padding: 8px 10px; gap: 8px; }
             #shop-toggle-indicator { font-size: 12px; }
             .tab-btn { font-size: 12px; padding: 8px 0; }
@@ -259,8 +261,10 @@
                 <select id="wave-select" title="웨이브 선택"></select>
             </div>
         </div>
-        <div class="title-text">Defense BOB</div>
-        <button class="btn-reset-top" onclick="triggerReset()">🔄</button>
+        <div class="title-reset-wrap">
+            <div class="title-text">Defense BOB</div>
+            <button class="btn-reset-top" onclick="triggerReset()">🔄</button>
+        </div>
     </div>
 
     <canvas id="gameCanvas"></canvas>
@@ -338,12 +342,8 @@
         isDraggingCard: false, dragCardType: null, dragX: 0, dragY: 0, dragClientY: 0,
         lastTime: performance.now(), autoRetryInterval: null, environmentProps: [],
         pendingGelatin: null, isPaused: false,
-        maxClearedWave: 1, viewZoom: 1,
-        viewFocusX: null, viewFocusY: null
+        maxClearedWave: 1
     };
-
-    const MIN_VIEW_ZOOM = 1;
-    const MAX_VIEW_ZOOM = 2.2;
 
     const pauseReasons = new Set();
     function setPause(reason, shouldPause) {
@@ -451,26 +451,6 @@
         return Math.round(Math.min(base * maxRatio, raw));
     }
 
-    function getViewFocus() {
-        if (Number.isFinite(state.viewFocusX) && Number.isFinite(state.viewFocusY)) {
-            return { x: state.viewFocusX, y: state.viewFocusY };
-        }
-        if (state.selectedTower) return { x: state.selectedTower.x, y: state.selectedTower.y };
-        return { x: canvas.width / 2, y: canvas.height / 2 };
-    }
-
-    function toWorldPosition(clientX, clientY) {
-        const rect = canvas.getBoundingClientRect();
-        const screenX = (clientX - rect.left) * (canvas.width / rect.width);
-        const screenY = (clientY - rect.top) * (canvas.height / rect.height);
-        const focus = getViewFocus();
-        const zoom = Math.max(1, state.viewZoom || 1);
-        return {
-            x: focus.x + (screenX - canvas.width / 2) / zoom,
-            y: focus.y + (screenY - canvas.height / 2) / zoom
-        };
-    }
-
     function syncWaveSelect() {
         const select = document.getElementById('wave-select');
         if (!select) return;
@@ -486,15 +466,6 @@
             }
         }
         if (select.value !== currentValue) select.value = currentValue;
-    }
-
-    function setViewZoom(nextZoom) {
-        state.viewZoom = Math.max(MIN_VIEW_ZOOM, Math.min(MAX_VIEW_ZOOM, nextZoom));
-    }
-
-    function setViewFocus(x, y) {
-        state.viewFocusX = x;
-        state.viewFocusY = y;
     }
 
     function jumpToWave(targetWave) {
@@ -523,9 +494,6 @@
         const saveData = {
             wave: state.wave, money: state.money,
             maxClearedWave: state.maxClearedWave,
-            viewZoom: state.viewZoom,
-            viewFocusX: state.viewFocusX,
-            viewFocusY: state.viewFocusY,
             towers: state.towers.map(t => ({
                 x: t.x, y: t.y, type: t.type, level: t.level, totalCost: t.totalCost,
                 damage: t.damage, cooldownMax: t.cooldownMax, range: t.range, 
@@ -544,9 +512,6 @@
                 const data = JSON.parse(saved);
                 state.wave = data.wave; state.money = data.money;
                 state.maxClearedWave = Math.max(1, data.maxClearedWave || data.wave || 1);
-                state.viewZoom = Math.max(MIN_VIEW_ZOOM, Math.min(MAX_VIEW_ZOOM, data.viewZoom || 1));
-                state.viewFocusX = Number.isFinite(data.viewFocusX) ? data.viewFocusX : null;
-                state.viewFocusY = Number.isFinite(data.viewFocusY) ? data.viewFocusY : null;
                 state.towers = data.towers.map(t => ({
                     ...TOWER_DEFS[t.type], ...t,
                     cooldown: 0, laserCharge: 0, currentTarget: null, isFiring: false, searchDelay: 0,
@@ -1595,45 +1560,11 @@
         saveGame();
     }
 
-    let pinchGesture = null;
-
-    function beginPinch(touchA, touchB) {
-        const midpointClientX = (touchA.clientX + touchB.clientX) / 2;
-        const midpointClientY = (touchA.clientY + touchB.clientY) / 2;
-        const midpointWorld = toWorldPosition(midpointClientX, midpointClientY);
-        setViewFocus(midpointWorld.x, midpointWorld.y);
-        pinchGesture = {
-            startDistance: Math.hypot(touchA.clientX - touchB.clientX, touchA.clientY - touchB.clientY),
-            startZoom: state.viewZoom || 1,
-            startFocusX: midpointWorld.x,
-            startFocusY: midpointWorld.y
-        };
-    }
-
-    function updatePinch(touchA, touchB) {
-        if (!pinchGesture) return;
-        const nextDistance = Math.hypot(touchA.clientX - touchB.clientX, touchA.clientY - touchB.clientY);
-        if (pinchGesture.startDistance <= 0) return;
-        const scale = nextDistance / pinchGesture.startDistance;
-        setViewZoom(pinchGesture.startZoom * scale);
-
-        const midpointClientX = (touchA.clientX + touchB.clientX) / 2;
-        const midpointClientY = (touchA.clientY + touchB.clientY) / 2;
-        const midpointWorld = toWorldPosition(midpointClientX, midpointClientY);
-        setViewFocus(midpointWorld.x, midpointWorld.y);
-    }
-
-    function endPinch() {
-        if (!pinchGesture) return;
-        pinchGesture = null;
-        saveGame();
-    }
-
     const handleDown = (clientX, clientY) => {
         if (state.isGameOver || state.isDraggingCard) return;
-        const world = toWorldPosition(clientX, clientY);
-        const tx = world.x;
-        const ty = world.y;
+        const rect = canvas.getBoundingClientRect();
+        const tx = (clientX - rect.left) * (canvas.width / rect.width);
+        const ty = (clientY - rect.top) * (canvas.height / rect.height);
 
         if (state.settingAngleMode && state.selectedTower && state.selectedTower.type === 'log') {
             state.isDraggingAngle = true; 
@@ -1650,9 +1581,9 @@
 
     const handleMove = (clientX, clientY) => {
         if (state.settingAngleMode && state.isDraggingAngle && state.selectedTower) {
-            const world = toWorldPosition(clientX, clientY);
-            const tx = world.x;
-            const ty = world.y;
+            const rect = canvas.getBoundingClientRect();
+            const tx = (clientX - rect.left) * (canvas.width / rect.width);
+            const ty = (clientY - rect.top) * (canvas.height / rect.height);
             state.selectedTower.angle = Math.atan2(ty - state.selectedTower.y, tx - state.selectedTower.x);
         }
     };
@@ -1662,45 +1593,10 @@
     canvas.addEventListener('mousedown', e => handleDown(e.clientX, e.clientY));
     canvas.addEventListener('mousemove', e => handleMove(e.clientX, e.clientY));
     window.addEventListener('mouseup', handleUp);
-    canvas.addEventListener('touchstart', e => {
-        const touches = e.touches;
-        if (!touches || touches.length === 0) return;
-        if (touches.length >= 2) {
-            e.preventDefault();
-            beginPinch(touches[0], touches[1]);
-            return;
-        }
-        if (touches[0].clientY < canvas.getBoundingClientRect().bottom) {
-            e.preventDefault();
-            handleDown(touches[0].clientX, touches[0].clientY);
-        }
-    }, { passive: false });
-    canvas.addEventListener('touchmove', e => {
-        const touches = e.touches;
-        if (!touches || touches.length === 0) return;
-        if (touches.length >= 2) {
-            e.preventDefault();
-            updatePinch(touches[0], touches[1]);
-            return;
-        }
-        if (pinchGesture) {
-            e.preventDefault();
-            return;
-        }
-        if (state.isDraggingCard) updateDragPos(touches[0]);
-        else if (touches[0].clientY < canvas.getBoundingClientRect().bottom) {
-            e.preventDefault();
-            handleMove(touches[0].clientX, touches[0].clientY);
-        }
-    }, { passive: false });
-    canvas.addEventListener('touchend', e => {
-        if (e.touches.length < 2 && pinchGesture) endPinch();
-        handleUp();
-    });
-    canvas.addEventListener('touchcancel', () => {
-        if (pinchGesture) endPinch();
-        handleUp();
-    });
+    canvas.addEventListener('touchstart', e => { if(e.touches[0].clientY < canvas.getBoundingClientRect().bottom) { e.preventDefault(); handleDown(e.touches[0].clientX, e.touches[0].clientY); } }, { passive: false });
+    canvas.addEventListener('touchmove', e => { if(e.touches[0].clientY < canvas.getBoundingClientRect().bottom) { e.preventDefault(); handleMove(e.touches[0].clientX, e.touches[0].clientY); } }, { passive: false });
+    window.addEventListener('touchend', e => handleUp());
+    window.addEventListener('touchcancel', e => handleUp());
 
     function openUpgradeMenu(tower) {
         state.selectedTower = tower;
@@ -2371,14 +2267,6 @@
 
     function draw() {
         ctx.fillStyle = '#27ae60'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-        const zoom = Math.max(1, state.viewZoom || 1);
-        const focus = getViewFocus();
-
-        ctx.save();
-        ctx.translate(canvas.width / 2, canvas.height / 2);
-        ctx.scale(zoom, zoom);
-        ctx.translate(-focus.x, -focus.y);
-
         const checkPathX = canvas.width / 2;
 
         if (state.environmentProps) {
@@ -2613,8 +2501,6 @@
             }
             ctx.restore();
         });
-
-        ctx.restore();
 
         if (!state.isWaveActive && state.waveDelay > 0) {
             ctx.fillStyle = 'white'; ctx.font = 'bold 22px "Segoe UI", Arial, sans-serif'; ctx.textAlign = 'center';
