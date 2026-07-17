@@ -371,12 +371,12 @@
     const ENEMY_DEFS = {
         goblin:  { name: '병아리', speed: 55, maxHp: 24, radius: 12, emoji: '🐥', reward: 6 },
         wolf:    { name: '라멘', speed: 95, maxHp: 15, radius: 10, emoji: '🍜', reward: 5 },
-        golem:   { name: '햄버거', speed: 28, maxHp: 380, radius: 16, emoji: '🍔', reward: 28 },
+        golem:   { name: '햄버거', speed: 28, maxHp: 380, radius: 20, emoji: '🍔', reward: 28 },
         scout:   { name: '사탕', speed: 125, maxHp: 13, radius: 9, emoji: '🍬', reward: 4 },
         shield:  { name: '식빵', speed: 35, maxHp: 190, radius: 14, emoji: '🍞', reward: 15 },
-        healer:  { name: '우유', speed: 42, maxHp: 85, radius: 13, emoji: '🥤', reward: 20 },
-        grape:   { name: '포도', speed: 24, maxHp: 42, radius: 14, emoji: '🍇', reward: 10 },
-        grape_small: { name: '작은 포도', speed: 30, maxHp: 16, radius: 9, emoji: '🍇', reward: 4 },
+        healer:  { name: '커피', speed: 42, maxHp: 85, radius: 13, emoji: '🥤', reward: 20 },
+        grape:   { name: '포도', speed: 24, maxHp: 200, radius: 14, emoji: '🍇', reward: 10 },
+        grape_small: { name: '작은 포도', speed: 30, maxHp: 150, radius: 9, emoji: '🍇', reward: 4 },
         milk:    { name: '우유', speed: 32, maxHp: 72, radius: 13, emoji: '🥛', reward: 14, auraRange: 58 },
         fries:   { name: '감자튀김', speed: 30, maxHp: 24, radius: 12, emoji: '🍟', reward: 12, shieldRange: 70, shieldInterval: 5.0 }
     };
@@ -1272,7 +1272,7 @@
         tooltipPreviewType = type || 'cannon';
         tooltipSandbox = createTooltipSandbox(tooltipPreviewType);
         if (previewLabel) {
-            previewLabel.innerText = `${TOWER_DEFS[tooltipPreviewType].name} Lv.1 vs 🐥`;
+            previewLabel.innerText = `${TOWER_DEFS[tooltipPreviewType].name} Lv.1`;
         }
         if (tooltipPreviewFrame) return;
         tooltipPreviewTime = 0;
