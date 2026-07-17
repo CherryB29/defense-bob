@@ -41,12 +41,13 @@
         .title-text {
             font-size: 20px; font-weight: 900; color: #f1c40f; 
             text-shadow: 2px 2px 0px #1a252f, -1px -1px 0px #1a252f;
-            position: static; justify-self: center; text-align: center;
+            position: static; justify-self: center; text-align: center; transform: translateX(-12px);
             white-space: nowrap; letter-spacing: 1px;
             max-width: 100%; overflow: hidden; text-overflow: ellipsis;
         }
         .stat-box { font-size: 14px; font-weight: bold; display: flex; align-items: center; gap: 4px; }
         .wave-left { display: flex; align-items: center; gap: 6px; justify-self: start; }
+        .wave-tools { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
         #btn-wave-info {
             border: none; background: #5dade2; color: white; border-radius: 999px;
             width: 20px; height: 20px; font-size: 11px; font-weight: bold; cursor: pointer; line-height: 20px;
@@ -130,6 +131,7 @@
             #top-ui { padding: 8px 10px; }
             .title-text { font-size: 16px; }
             .stat-box, .money-text { font-size: 13px; }
+            .wave-tools { gap: 4px; }
             #wave-select { font-size: 11px; height: 26px; padding: 3px 5px; }
             #shop-header { padding: 8px 10px; gap: 8px; }
             #shop-toggle-indicator { font-size: 12px; }
@@ -253,7 +255,9 @@
         <div class="wave-left">
             <div class="stat-box">웨이브 <span id="wave-text">1</span></div>
             <button id="btn-wave-info" title="웨이브 정보">i</button>
-            <select id="wave-select" title="웨이브 선택"></select>
+            <div class="wave-tools">
+                <select id="wave-select" title="웨이브 선택"></select>
+            </div>
         </div>
         <div class="title-text">Defense BOB</div>
         <button class="btn-reset-top" onclick="triggerReset()">🔄</button>
@@ -334,21 +338,12 @@
         isDraggingCard: false, dragCardType: null, dragX: 0, dragY: 0, dragClientY: 0,
         lastTime: performance.now(), autoRetryInterval: null, environmentProps: [],
         pendingGelatin: null, isPaused: false,
-        maxClearedWave: 1, viewZoom: 1, cameraX: null, cameraY: null
+        maxClearedWave: 1, viewZoom: 1,
+        viewFocusX: null, viewFocusY: null
     };
 
     const MIN_VIEW_ZOOM = 1;
-    const MAX_VIEW_ZOOM = 1.9;
-    const PINCH_ZOOM_SENSITIVITY = 0.006;
-    const pinchState = {
-        active: false,
-        startDistance: 0,
-        startZoom: 1,
-        startCameraX: 0,
-        startCameraY: 0,
-        focusWorldX: 0,
-        focusWorldY: 0
-    };
+    const MAX_VIEW_ZOOM = 2.2;
 
     const pauseReasons = new Set();
     function setPause(reason, shouldPause) {
@@ -456,19 +451,20 @@
         return Math.round(Math.min(base * maxRatio, raw));
     }
 
-    function getViewCenter() {
-        if (state.cameraX === null || state.cameraY === null) {
-            return { x: canvas.width / 2, y: canvas.height / 2 };
+    function getViewFocus() {
+        if (Number.isFinite(state.viewFocusX) && Number.isFinite(state.viewFocusY)) {
+            return { x: state.viewFocusX, y: state.viewFocusY };
         }
-        return { x: state.cameraX, y: state.cameraY };
+        if (state.selectedTower) return { x: state.selectedTower.x, y: state.selectedTower.y };
+        return { x: canvas.width / 2, y: canvas.height / 2 };
     }
 
     function toWorldPosition(clientX, clientY) {
         const rect = canvas.getBoundingClientRect();
         const screenX = (clientX - rect.left) * (canvas.width / rect.width);
         const screenY = (clientY - rect.top) * (canvas.height / rect.height);
-        const focus = getViewCenter();
-        const zoom = Math.max(MIN_VIEW_ZOOM, state.viewZoom || MIN_VIEW_ZOOM);
+        const focus = getViewFocus();
+        const zoom = Math.max(1, state.viewZoom || 1);
         return {
             x: focus.x + (screenX - canvas.width / 2) / zoom,
             y: focus.y + (screenY - canvas.height / 2) / zoom
@@ -492,18 +488,13 @@
         if (select.value !== currentValue) select.value = currentValue;
     }
 
-    function setViewZoom(nextZoom, focusScreenX = canvas.width / 2, focusScreenY = canvas.height / 2) {
-        const rect = canvas.getBoundingClientRect();
-        const screenX = (focusScreenX - rect.left) * (canvas.width / rect.width);
-        const screenY = (focusScreenY - rect.top) * (canvas.height / rect.height);
-        const previousZoom = Math.max(MIN_VIEW_ZOOM, state.viewZoom || MIN_VIEW_ZOOM);
-        const previousCenter = getViewCenter();
-        const worldX = previousCenter.x + (screenX - canvas.width / 2) / previousZoom;
-        const worldY = previousCenter.y + (screenY - canvas.height / 2) / previousZoom;
-        const clamped = Math.max(MIN_VIEW_ZOOM, Math.min(MAX_VIEW_ZOOM, nextZoom));
-        state.viewZoom = clamped;
-        state.cameraX = worldX - (screenX - canvas.width / 2) / clamped;
-        state.cameraY = worldY - (screenY - canvas.height / 2) / clamped;
+    function setViewZoom(nextZoom) {
+        state.viewZoom = Math.max(MIN_VIEW_ZOOM, Math.min(MAX_VIEW_ZOOM, nextZoom));
+    }
+
+    function setViewFocus(x, y) {
+        state.viewFocusX = x;
+        state.viewFocusY = y;
     }
 
     function jumpToWave(targetWave) {
@@ -533,8 +524,8 @@
             wave: state.wave, money: state.money,
             maxClearedWave: state.maxClearedWave,
             viewZoom: state.viewZoom,
-            cameraX: state.cameraX,
-            cameraY: state.cameraY,
+            viewFocusX: state.viewFocusX,
+            viewFocusY: state.viewFocusY,
             towers: state.towers.map(t => ({
                 x: t.x, y: t.y, type: t.type, level: t.level, totalCost: t.totalCost,
                 damage: t.damage, cooldownMax: t.cooldownMax, range: t.range, 
@@ -554,8 +545,8 @@
                 state.wave = data.wave; state.money = data.money;
                 state.maxClearedWave = Math.max(1, data.maxClearedWave || data.wave || 1);
                 state.viewZoom = Math.max(MIN_VIEW_ZOOM, Math.min(MAX_VIEW_ZOOM, data.viewZoom || 1));
-                state.cameraX = typeof data.cameraX === 'number' ? data.cameraX : 0;
-                state.cameraY = typeof data.cameraY === 'number' ? data.cameraY : 0;
+                state.viewFocusX = Number.isFinite(data.viewFocusX) ? data.viewFocusX : null;
+                state.viewFocusY = Number.isFinite(data.viewFocusY) ? data.viewFocusY : null;
                 state.towers = data.towers.map(t => ({
                     ...TOWER_DEFS[t.type], ...t,
                     cooldown: 0, laserCharge: 0, currentTarget: null, isFiring: false, searchDelay: 0,
@@ -677,11 +668,6 @@
         canvas.width = newWidth;
         canvas.height = newHeight;
         ctx.imageSmoothingEnabled = true;
-
-        if (state.cameraX === null || state.cameraY === null) {
-            state.cameraX = canvas.width / 2;
-            state.cameraY = canvas.height / 2;
-        }
 
         lastGameWidth = newGameWidth;
         lastGameHeight = newGameHeight;
@@ -1609,6 +1595,40 @@
         saveGame();
     }
 
+    let pinchGesture = null;
+
+    function beginPinch(touchA, touchB) {
+        const midpointClientX = (touchA.clientX + touchB.clientX) / 2;
+        const midpointClientY = (touchA.clientY + touchB.clientY) / 2;
+        const midpointWorld = toWorldPosition(midpointClientX, midpointClientY);
+        setViewFocus(midpointWorld.x, midpointWorld.y);
+        pinchGesture = {
+            startDistance: Math.hypot(touchA.clientX - touchB.clientX, touchA.clientY - touchB.clientY),
+            startZoom: state.viewZoom || 1,
+            startFocusX: midpointWorld.x,
+            startFocusY: midpointWorld.y
+        };
+    }
+
+    function updatePinch(touchA, touchB) {
+        if (!pinchGesture) return;
+        const nextDistance = Math.hypot(touchA.clientX - touchB.clientX, touchA.clientY - touchB.clientY);
+        if (pinchGesture.startDistance <= 0) return;
+        const scale = nextDistance / pinchGesture.startDistance;
+        setViewZoom(pinchGesture.startZoom * scale);
+
+        const midpointClientX = (touchA.clientX + touchB.clientX) / 2;
+        const midpointClientY = (touchA.clientY + touchB.clientY) / 2;
+        const midpointWorld = toWorldPosition(midpointClientX, midpointClientY);
+        setViewFocus(midpointWorld.x, midpointWorld.y);
+    }
+
+    function endPinch() {
+        if (!pinchGesture) return;
+        pinchGesture = null;
+        saveGame();
+    }
+
     const handleDown = (clientX, clientY) => {
         if (state.isGameOver || state.isDraggingCard) return;
         const world = toWorldPosition(clientX, clientY);
@@ -1639,87 +1659,47 @@
 
     const handleUp = () => { if (state.settingAngleMode) state.isDraggingAngle = false; };
 
-    function getTouchDistanceAndMidpoint(touchA, touchB) {
-        const dx = touchA.clientX - touchB.clientX;
-        const dy = touchA.clientY - touchB.clientY;
-        return {
-            distance: Math.hypot(dx, dy),
-            midpointX: (touchA.clientX + touchB.clientX) / 2,
-            midpointY: (touchA.clientY + touchB.clientY) / 2
-        };
-    }
-
-    function startPinch(touchA, touchB) {
-        const rect = canvas.getBoundingClientRect();
-        const data = getTouchDistanceAndMidpoint(touchA, touchB);
-        const currentZoom = Math.max(MIN_VIEW_ZOOM, state.viewZoom || MIN_VIEW_ZOOM);
-        const center = getViewCenter();
-        const midScreenX = (data.midpointX - rect.left) * (canvas.width / rect.width);
-        const midScreenY = (data.midpointY - rect.top) * (canvas.height / rect.height);
-        pinchState.active = true;
-        pinchState.startDistance = data.distance || 1;
-        pinchState.startZoom = currentZoom;
-        pinchState.startCameraX = center.x;
-        pinchState.startCameraY = center.y;
-        pinchState.focusWorldX = center.x + (midScreenX - canvas.width / 2) / currentZoom;
-        pinchState.focusWorldY = center.y + (midScreenY - canvas.height / 2) / currentZoom;
-    }
-
-    function updatePinch(touchA, touchB) {
-        if (!pinchState.active) return;
-        const rect = canvas.getBoundingClientRect();
-        const data = getTouchDistanceAndMidpoint(touchA, touchB);
-        const midScreenX = (data.midpointX - rect.left) * (canvas.width / rect.width);
-        const midScreenY = (data.midpointY - rect.top) * (canvas.height / rect.height);
-        const zoomRatio = data.distance / Math.max(1, pinchState.startDistance);
-        const nextZoom = Math.max(MIN_VIEW_ZOOM, Math.min(MAX_VIEW_ZOOM, pinchState.startZoom * zoomRatio));
-        state.viewZoom = nextZoom;
-        state.cameraX = pinchState.focusWorldX - (midScreenX - canvas.width / 2) / nextZoom;
-        state.cameraY = pinchState.focusWorldY - (midScreenY - canvas.height / 2) / nextZoom;
-    }
-
-    function endPinch() {
-        if (pinchState.active) {
-            pinchState.active = false;
-            saveGame();
-        }
-    }
-
     canvas.addEventListener('mousedown', e => handleDown(e.clientX, e.clientY));
     canvas.addEventListener('mousemove', e => handleMove(e.clientX, e.clientY));
     window.addEventListener('mouseup', handleUp);
     canvas.addEventListener('touchstart', e => {
-        const rect = canvas.getBoundingClientRect();
-        if (e.touches.length >= 2) {
+        const touches = e.touches;
+        if (!touches || touches.length === 0) return;
+        if (touches.length >= 2) {
             e.preventDefault();
-            startPinch(e.touches[0], e.touches[1]);
+            beginPinch(touches[0], touches[1]);
             return;
         }
-        if (e.touches[0].clientY < rect.bottom) {
+        if (touches[0].clientY < canvas.getBoundingClientRect().bottom) {
             e.preventDefault();
-            handleDown(e.touches[0].clientX, e.touches[0].clientY);
+            handleDown(touches[0].clientX, touches[0].clientY);
         }
     }, { passive: false });
     canvas.addEventListener('touchmove', e => {
-        const rect = canvas.getBoundingClientRect();
-        if (e.touches.length >= 2) {
+        const touches = e.touches;
+        if (!touches || touches.length === 0) return;
+        if (touches.length >= 2) {
             e.preventDefault();
-            updatePinch(e.touches[0], e.touches[1]);
+            updatePinch(touches[0], touches[1]);
             return;
         }
-        if (pinchState.active) return;
-        if (e.touches[0] && e.touches[0].clientY < rect.bottom) {
+        if (pinchGesture) {
             e.preventDefault();
-            handleMove(e.touches[0].clientX, e.touches[0].clientY);
+            return;
+        }
+        if (state.isDraggingCard) updateDragPos(touches[0]);
+        else if (touches[0].clientY < canvas.getBoundingClientRect().bottom) {
+            e.preventDefault();
+            handleMove(touches[0].clientX, touches[0].clientY);
         }
     }, { passive: false });
     canvas.addEventListener('touchend', e => {
+        if (e.touches.length < 2 && pinchGesture) endPinch();
         handleUp();
-        if (e.touches.length < 2) endPinch();
     });
     canvas.addEventListener('touchcancel', () => {
+        if (pinchGesture) endPinch();
         handleUp();
-        endPinch();
     });
 
     function openUpgradeMenu(tower) {
@@ -2391,7 +2371,7 @@
 
     function draw() {
         ctx.fillStyle = '#27ae60'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-        const zoom = Math.max(MIN_VIEW_ZOOM, state.viewZoom || MIN_VIEW_ZOOM);
+        const zoom = Math.max(1, state.viewZoom || 1);
         const focus = getViewFocus();
 
         ctx.save();
