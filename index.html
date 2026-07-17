@@ -344,6 +344,7 @@
         pendingGelatin: null, isPaused: false,
         maxClearedWave: 1
     };
+    const VIEW_SCALE = 1.4;
 
     const pauseReasons = new Set();
     function setPause(reason, shouldPause) {
@@ -447,8 +448,19 @@
     }
 
     function getRangeValue(base, level, maxRatio = 2.2) {
-        const raw = base * (1 + 0.15 * (level - 1));
-        return Math.round(Math.min(base * maxRatio, raw));
+        return Math.round(base * (1 + 0.15 * (level - 1)));
+    }
+
+    function toWorldPosition(clientX, clientY) {
+        const rect = canvas.getBoundingClientRect();
+        const sx = (clientX - rect.left) * (canvas.width / rect.width);
+        const sy = (clientY - rect.top) * (canvas.height / rect.height);
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+        return {
+            x: cx + (sx - cx) / VIEW_SCALE,
+            y: cy + (sy - cy) / VIEW_SCALE
+        };
     }
 
     function syncWaveSelect() {
@@ -1562,9 +1574,9 @@
 
     const handleDown = (clientX, clientY) => {
         if (state.isGameOver || state.isDraggingCard) return;
-        const rect = canvas.getBoundingClientRect();
-        const tx = (clientX - rect.left) * (canvas.width / rect.width);
-        const ty = (clientY - rect.top) * (canvas.height / rect.height);
+        const world = toWorldPosition(clientX, clientY);
+        const tx = world.x;
+        const ty = world.y;
 
         if (state.settingAngleMode && state.selectedTower && state.selectedTower.type === 'log') {
             state.isDraggingAngle = true; 
@@ -1581,9 +1593,9 @@
 
     const handleMove = (clientX, clientY) => {
         if (state.settingAngleMode && state.isDraggingAngle && state.selectedTower) {
-            const rect = canvas.getBoundingClientRect();
-            const tx = (clientX - rect.left) * (canvas.width / rect.width);
-            const ty = (clientY - rect.top) * (canvas.height / rect.height);
+            const world = toWorldPosition(clientX, clientY);
+            const tx = world.x;
+            const ty = world.y;
             state.selectedTower.angle = Math.atan2(ty - state.selectedTower.y, tx - state.selectedTower.x);
         }
     };
@@ -2267,6 +2279,10 @@
 
     function draw() {
         ctx.fillStyle = '#27ae60'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.save();
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.scale(VIEW_SCALE, VIEW_SCALE);
+        ctx.translate(-canvas.width / 2, -canvas.height / 2);
         const checkPathX = canvas.width / 2;
 
         if (state.environmentProps) {
@@ -2501,6 +2517,8 @@
             }
             ctx.restore();
         });
+
+        ctx.restore();
 
         if (!state.isWaveActive && state.waveDelay > 0) {
             ctx.fillStyle = 'white'; ctx.font = 'bold 22px "Segoe UI", Arial, sans-serif'; ctx.textAlign = 'center';
