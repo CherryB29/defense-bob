@@ -34,6 +34,13 @@
             white-space: nowrap; letter-spacing: 1px;
         }
         .stat-box { font-size: 14px; font-weight: bold; display: flex; align-items: center; gap: 4px; }
+        .wave-left { display: flex; align-items: center; gap: 6px; }
+        #btn-wave-info {
+            border: none; background: #5dade2; color: white; border-radius: 999px;
+            width: 20px; height: 20px; font-size: 11px; font-weight: bold; cursor: pointer; line-height: 20px;
+            padding: 0;
+        }
+        #btn-wave-info:active { background: #3498db; }
         .money-text { color: var(--money-color); font-size: 15px; margin-right: 6px; }
         .btn-reset-top {
             background: #e74c3c; color: white; border: none; padding: 4px 6px;
@@ -45,6 +52,7 @@
             background: #ecf0f1; box-shadow: 0 -4px 6px rgba(0,0,0,0.1);
             z-index: 10; display: flex; flex-direction: column; flex-shrink: 0;
             padding-bottom: env(safe-area-inset-bottom); position: relative;
+            max-height: 56vh; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain;
         }
         #normal-bottom { display: flex; flex-direction: column; width: 100%; }
         #tab-menu { display: flex; background: #bdc3c7; }
@@ -53,25 +61,87 @@
             font-weight: bold; font-size: 14px; color: #7f8c8d; cursor: pointer; transition: 0.2s;
         }
         .tab-btn.active { background: #ecf0f1; color: var(--tab-active); border-top: 3px solid var(--tab-active); }
-        #build-menu { display: flex; gap: 6px; padding: 10px 8px; overflow-x: auto; flex-shrink: 0; position: relative; }
-        #upgrade-menu {
-            display: none; flex-direction: column; align-items: center; justify-content: center;
-            padding: 8px; gap: 4px; height: auto;
+        #build-menu { display: flex; gap: 6px; padding: 10px 8px; overflow-x: auto; flex-shrink: 0; position: relative; -webkit-overflow-scrolling: touch; }
+        #shop-header {
+            display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 12px;
+            background: linear-gradient(180deg, #ffffff 0%, #ecf0f1 100%); border-top: 1px solid #d6dbdf;
+            border-bottom: 1px solid #d6dbdf;
         }
-        #angle-ui { display: none; flex-direction: column; padding: 12px; gap: 8px; }
-
+        #shop-toggle-indicator { color: #2c3e50; font-size: 13px; font-weight: 800; letter-spacing: 0.2px; }
+        #card-tooltip { display:none; position:absolute; left:50%; transform:translateX(-50%); bottom: 110px; width: calc(100% - 20px); max-width: 380px; background: rgba(20,25,33,0.92); color: #ecf0f1; border-radius: 14px; padding: 12px; z-index: 15; box-shadow: 0 10px 24px rgba(0,0,0,0.35); }
+        #upgrade-menu, #angle-ui { display: none; }
+        #card-tooltip strong { display:block; margin-bottom: 6px; font-size: 14px; }
+        #card-tooltip p { margin: 0 0 8px; line-height: 1.45; color: #dfe6e9; font-size: 13px; }
+        #card-tooltip .tooltip-stats { font-size: 12px; color: #bdc3c7; line-height: 1.5; }
+        #build-menu, .card { touch-action: pan-x; }
+        #upgrade-menu, #angle-ui { display: none; flex-direction: column; gap: 8px; padding: 10px 12px; max-height: 52vh; overflow-y: auto; position: relative; z-index: 12; -webkit-overflow-scrolling: touch; touch-action: pan-y; }
+        #upgrade-menu { background: #f8f9f9; }
+        #angle-ui { background: #f8f9f9; }
+        #bottom-ui { min-height: 0; }
         .card {
             background: white; border: 2px solid #bdc3c7; border-radius: 8px;
             padding: 6px; width: 68px; height: 60px; text-align: center; font-size: 12px;
             font-weight: bold; color: #2c3e50; flex-shrink: 0; display: flex; flex-direction: column; justify-content: space-evenly;
             position: relative; cursor: grab;
             letter-spacing: -0.5px;
+            user-select: none;
+        }
+        @media (max-width: 450px) {
+            #game-wrapper { max-width: 100%; }
+            #top-ui { padding: 8px 10px; }
+            .title-text { font-size: 18px; }
+            .stat-box, .money-text { font-size: 13px; }
+            #shop-header { padding: 8px 10px; gap: 8px; }
+            #shop-toggle-indicator { font-size: 12px; }
+            .tab-btn { font-size: 12px; padding: 8px 0; }
+            #build-menu { padding: 8px 6px; gap: 5px; }
+            .card { width: 58px; height: 56px; font-size: 11px; }
+            .card-cost { font-size: 10px; }
+            #card-tooltip { bottom: 90px; width: calc(100% - 16px); padding: 10px; }
+            #card-tooltip strong { font-size: 13px; }
+            #card-tooltip p { font-size: 12px; }
+            #card-tooltip .tooltip-stats { font-size: 11px; }
+            #normal-bottom { padding-bottom: 8px; }
+            .action-btn { padding: 6px 10px; font-size: 11px; width: 100%; }
+            #upgrade-details { font-size: 10px; }
+            #bottom-ui { max-height: 62vh; }
         }
         .card:active { cursor: grabbing; }
-        .card.disabled { opacity: 0.4; filter: grayscale(1); pointer-events: none; }
+        .card.disabled { opacity: 0.4; filter: grayscale(1); }
         .card-cost { color: var(--money-color); font-size: 11px; }
 
-        .action-btn { padding: 6px 12px; border: none; border-radius: 6px; font-weight: bold; font-size: 12px; color: white; width: 95%; cursor: pointer; }
+        #card-tooltip-media {
+            margin-top: 10px; width: 100%; min-height: 120px; border-radius: 12px;
+            background: #111; overflow: hidden; position: relative; display: grid; place-items: center;
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
+        }
+        #card-tooltip-media::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.12), transparent 28%),
+                        linear-gradient(90deg, rgba(255,255,255,0.05), rgba(255,255,255,0.12), rgba(255,255,255,0.05));
+            animation: tooltip-video-shine 2.5s infinite linear;
+        }
+        #card-tooltip-media .tooltip-video-label {
+            position: relative; z-index: 1; color: #f1c40f; font-size: 12px; font-weight: bold;
+            letter-spacing: 0.2px; text-transform: uppercase; opacity: 0.85; margin-bottom: 6px;
+        }
+        #card-tooltip-media .tooltip-video-player {
+            position: relative; width: 90%; height: 92px; background: rgba(0,0,0,0.22); border-radius: 10px;
+            overflow: hidden; display: grid; place-items: center;
+        }
+        #card-tooltip-media canvas {
+            width: 100%; height: 100%; display: block;
+        }
+        @keyframes tooltip-video-shine {
+            from { transform: translateX(-100%); }
+            to { transform: translateX(100%); }
+        }
+        @keyframes tooltip-video-pulse {
+            0%, 100% { opacity: 0.7; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.08); }
+        }
+        .action-btn { padding: 6px 12px; border: none; border-radius: 6px; font-weight: bold; font-size: 12px; color: white; width: 95%; cursor: pointer; touch-action: manipulation; }
         .btn-upgrade { background: #2ecc71; }
         .btn-upgrade:active { background: #27ae60; }
         .btn-upgrade.disabled { background: #95a5a6; opacity: 0.7; pointer-events: none; }
@@ -87,6 +157,20 @@
         }
         .overlay h1 { color: #e74c3c; margin-bottom: 10px; }
         .overlay p { font-size: 16px; margin-bottom: 20px; line-height: 1.5; }
+        #offline-reward-overlay .reward-card {
+            width: min(92%, 420px); background: #182233; border: 1px solid rgba(255,255,255,0.16);
+            border-radius: 16px; padding: 16px 14px; text-align: center; box-shadow: 0 14px 32px rgba(0,0,0,0.35);
+        }
+        #offline-reward-overlay h2 { margin: 0 0 8px; color: #f1c40f; font-size: 19px; }
+        #offline-reward-overlay .reward-text { color: #ecf0f1; font-size: 14px; line-height: 1.55; margin: 10px 0 14px; white-space: pre-line; }
+        #offline-reward-overlay .reward-note { color: #bdc3c7; font-size: 12px; line-height: 1.45; margin-top: 4px; }
+        #wave-info-overlay .wave-info-card {
+            width: min(92%, 420px); max-height: 70vh; overflow-y: auto;
+            background: #182233; border: 1px solid rgba(255,255,255,0.16); border-radius: 14px;
+            padding: 14px; text-align: left;
+        }
+        #wave-info-overlay h2 { margin: 0 0 8px; color: #f1c40f; font-size: 18px; }
+        #wave-info-overlay .wave-info-text { white-space: pre-line; color: #ecf0f1; font-size: 13px; line-height: 1.5; margin: 10px 0 12px; }
         #upgrade-details {
             font-size: 11px; color: #7f8c8d; width: 95%; background: #f8f9f9;
             border: 1px solid #d5dbdb; border-radius: 4px; padding: 6px; margin: 2px 0 6px 0; line-height: 1.4; text-align: left;
@@ -105,23 +189,56 @@
         <button class="action-btn btn-cancel" style="width: 260px; margin-top: 10px;" onclick="retryWave(true)">⏪ 이전 웨이브로 돌아가기</button>
     </div>
 
-    <div id="top-ui">
-        <div class="stat-box">웨이브 <span id="wave-text">1</span></div>
-        <div class="title-text">Defense BOB</div>
-        <div style="display:flex; align-items:center;">
-            <div class="stat-box money-text">💰 <span id="money-text">0</span></div>
-            <button class="btn-reset-top" onclick="triggerReset()">🔄</button>
+    <div id="wave-info-overlay" class="overlay">
+        <div class="wave-info-card">
+            <h2>웨이브 정보</h2>
+            <div id="wave-info-text" class="wave-info-text"></div>
+            <button class="action-btn btn-cancel" style="width: 100%;" onclick="closeWaveInfo()">닫기</button>
         </div>
+    </div>
+
+    <div id="offline-reward-overlay" class="overlay">
+        <div class="reward-card">
+            <h2>오프라인 보상</h2>
+            <div id="offline-reward-text" class="reward-text"></div>
+            <div class="reward-note">최대 24시간까지만 계산됩니다.</div>
+            <button class="action-btn btn-upgrade" style="width: 100%; margin-top: 14px;" onclick="closeOfflineRewardPopup()">확인</button>
+        </div>
+    </div>
+
+    <div id="top-ui">
+        <div class="wave-left">
+            <div class="stat-box">웨이브 <span id="wave-text">1</span></div>
+            <button id="btn-wave-info" title="웨이브 정보">i</button>
+        </div>
+        <div class="title-text">Defense BOB</div>
+        <button class="btn-reset-top" onclick="triggerReset()">🔄</button>
     </div>
 
     <canvas id="gameCanvas"></canvas>
 
+    <div id="card-tooltip">
+        <strong id="card-tooltip-title"></strong>
+        <p id="card-tooltip-desc"></p>
+        <div class="tooltip-stats" id="card-tooltip-stats"></div>
+        <div id="card-tooltip-media">
+            <div class="tooltip-video-label">예시 영상 재생 중</div>
+            <div class="tooltip-video-player">
+                <canvas id="card-tooltip-video-canvas" width="360" height="92"></canvas>
+            </div>
+        </div>
+    </div>
+
     <div id="bottom-ui">
+        <div id="shop-header">
+            <div class="stat-box money-text">💰 <span id="money-text">0</span></div>
+            <div id="shop-toggle-indicator">상점</div>
+        </div>
         <div id="normal-bottom">
             <div id="tab-menu">
-                <button class="tab-btn active" onclick="switchTab('damage')">⚔️ 피해</button>
-                <button class="tab-btn" onclick="switchTab('utility')">🛡️ 보조</button>
-                <button class="tab-btn" onclick="switchTab('resource')">💎 자원</button>
+                <button class="tab-btn active" onclick="switchTab(event, 'damage')">⚔️ 피해</button>
+                <button class="tab-btn" onclick="switchTab(event, 'utility')">🛡️ 보조</button>
+                <button class="tab-btn" onclick="switchTab(event, 'resource')">💎 자원</button>
             </div>
 
             <div id="build-menu">
@@ -131,7 +248,7 @@
                 <div class="card" data-category="damage" data-type="tesla">전기 구이<div class="card-cost">💰 180</div></div>
                 <div class="card" data-category="damage" data-type="pyro">토치<div class="card-cost">💰 220</div></div>
                 <div class="card" data-category="damage" data-type="crossbow">이쑤시개<br>발사기<div class="card-cost">💰 250</div></div>
-                <div class="card" data-category="damage" data-type="fryer" style="display:none;">튀김기<div class="card-cost">💰 300</div></div>
+                <div class="card" data-category="damage" data-type="fryer">튀김기<div class="card-cost">💰 300</div></div>
                 
                 <div class="card" data-category="utility" data-type="sprinkler" style="display:none;">정수기<div class="card-cost">💰 50</div></div>
                 <div class="card" data-category="utility" data-type="log" style="display:none;">밀대<div class="card-cost">💰 150</div></div>
@@ -140,18 +257,18 @@
 
                 <div class="card" data-category="resource" data-type="mine" style="display:none;">돼지<br>저금통<div class="card-cost">💰 60</div></div>
             </div>
-
-            <div id="upgrade-menu">
-                <div id="upgrade-info" style="font-weight: bold; color: #2c3e50; font-size:13px;">방어탑 정보</div>
-                <div id="upgrade-details"></div>
-                <button class="action-btn btn-upgrade" id="btn-do-upgrade">업그레이드 (💰 ?)</button>
-                <button class="action-btn btn-action" id="btn-set-angle" style="display:none; margin-bottom:4px;">🪵 발사 방향 재설정</button>
-                <button class="action-btn btn-sell" id="btn-sell-tower" style="margin-bottom:4px;">🔨 방어탑 판매 (💰 ?)</button>
-                <button class="action-btn btn-cancel" id="btn-cancel-upgrade">취소</button>
-            </div>
         </div>
 
-        <div id="angle-ui">
+        <div id="upgrade-menu" style="display:none;">
+            <div id="upgrade-info" style="font-weight: bold; color: #2c3e50; font-size:13px;">방어탑 정보</div>
+            <div id="upgrade-details"></div>
+            <button class="action-btn btn-upgrade" id="btn-do-upgrade">업그레이드 (💰 ?)</button>
+            <button class="action-btn btn-action" id="btn-set-angle" style="display:none; margin-bottom:4px;">🪵 발사 방향 재설정</button>
+            <button class="action-btn btn-sell" id="btn-sell-tower" style="margin-bottom:4px;">🔨 방어탑 판매 (💰 ?)</button>
+            <button class="action-btn btn-cancel" id="btn-cancel-upgrade">취소</button>
+        </div>
+
+        <div id="angle-ui" style="display:none;">
             <div style="text-align:center; font-size:13px; font-weight:bold; color:#2c3e50; margin-bottom: 4px;">
                 👆 화면을 누르거나 드래그하여 방향을 바꾸세요
             </div>
@@ -172,8 +289,15 @@
         selectedTower: null, settingAngleMode: false, isDraggingAngle: false,
         isDraggingCard: false, dragCardType: null, dragX: 0, dragY: 0, dragClientY: 0,
         lastTime: performance.now(), autoRetryInterval: null, environmentProps: [],
-        pendingGelatin: null 
+        pendingGelatin: null, isPaused: false
     };
+
+    const pauseReasons = new Set();
+    function setPause(reason, shouldPause) {
+        if (shouldPause) pauseReasons.add(reason);
+        else pauseReasons.delete(reason);
+        state.isPaused = pauseReasons.size > 0;
+    }
 
     const TOWER_DEFS = {
         mine:      { name: '돼지저금통', cost: 60, radius: 15, color: '#ff9ff3', range: 0, cooldownMax: 6.0, prod: 2, upCost: 50 },
@@ -196,8 +320,83 @@
         golem:   { speed: 28, maxHp: 380, radius: 16, emoji: '🍔', reward: 28 },
         scout:   { speed: 125, maxHp: 13, radius: 9, emoji: '🍬', reward: 4 },
         shield:  { speed: 35, maxHp: 190, radius: 14, emoji: '🍞', reward: 15 },
-        healer:  { speed: 42, maxHp: 85, radius: 13, emoji: '🥤', reward: 20 }
+        healer:  { speed: 42, maxHp: 85, radius: 13, emoji: '🥤', reward: 20 },
+        grape:   { speed: 24, maxHp: 42, radius: 14, emoji: '🍇', reward: 10 },
+        grape_small: { speed: 30, maxHp: 16, radius: 9, emoji: '🍇', reward: 4 },
+        milk:    { speed: 32, maxHp: 72, radius: 13, emoji: '🥛', reward: 14, auraRange: 58 },
+        fries:   { speed: 30, maxHp: 24, radius: 12, emoji: '🍟', reward: 12, shieldRange: 70, shieldInterval: 5.0 }
     };
+
+    const CARD_INFO = {
+        cannon: {
+            desc: '기본 단일 공격 타워입니다. 안정적으로 한 대상에게 피해를 줍니다.',
+            stats: ['사거리 110', '피해 20', '공격 간격 1.2초']
+        },
+        shotgun: {
+            desc: '근거리 고화력 타워입니다. 짧은 사거리에서 빠르게 큰 피해를 줍니다.',
+            stats: ['사거리 55', '피해 35', '공격 간격 1.0초']
+        },
+        mortar: {
+            desc: '느리지만 착탄 지점 주변에 범위 피해를 주는 포격 타워입니다.',
+            stats: ['사거리 180', '피해 25', '폭발 범위 46']
+        },
+        tesla: {
+            desc: '단일 감전 공격으로 적을 기절시킵니다. 젖은 적은 추가 연쇄가 발생합니다.',
+            stats: ['사거리 120', '피해 17.5', '기절 0.5초']
+        },
+        pyro: {
+            desc: '근거리 지속 화염으로 한 대상을 빠르게 태우는 타워입니다.',
+            stats: ['사거리 80', '지속 피해', '짧은 공격 주기']
+        },
+        crossbow: {
+            desc: '긴 사거리에서 빠르게 단일 대상을 저격하는 타워입니다.',
+            stats: ['사거리 240', '피해 6', '공격 간격 0.2초']
+        },
+        fryer: {
+            desc: '전방에 기름 장판을 깔아 범위 지속 피해와 둔화를 부여합니다.',
+            stats: ['전방 장판', '지속 피해', '이동 둔화']
+        },
+        sprinkler: {
+            desc: '범위 내 적을 젖은 상태로 만들고 이동을 늦춥니다.',
+            stats: ['사거리 90', '범위 부여', '이동 둔화']
+        },
+        amplifier: {
+            desc: '주변 타워의 공격 속도를 증가시키는 지원 타워입니다.',
+            stats: ['버프 범위 80', '공속 증가', '비공격형']
+        },
+        log: {
+            desc: '설정한 방향으로 굴러가며 적을 밀어내는 직선 제어 타워입니다.',
+            stats: ['직선 공격', '넉백', '방향 설정']
+        },
+        gelatin: {
+            desc: '두 젤라틴을 연결해 벽을 만들고 적을 튕겨내는 제어형 타워입니다.',
+            stats: ['2개 연결', '충돌 반발', '재생성']
+        },
+        mine: {
+            desc: '주기적으로 골드를 생산하는 경제 타워입니다.',
+            stats: ['골드 +2', '생산 주기 6초', '비공격형']
+        }
+    };
+
+    function getUpgradeCost(baseCost, level) {
+        return Math.round(baseCost * Math.pow(1.18, level - 1));
+    }
+
+    // Level-up growth: +15% of base stat per level, with existing cap ratios respected.
+    function getUpgradeValue(base, level, maxRatio = 10) {
+        const raw = base * (1 + 0.15 * (level - 1));
+        return Math.min(base * maxRatio, raw);
+    }
+
+    function getCooldownValue(base, level, minRatio = 0.45) {
+        const raw = base * (1 - 0.15 * (level - 1));
+        return Math.max(0.3, Math.max(base * minRatio, raw));
+    }
+
+    function getRangeValue(base, level, maxRatio = 2.2) {
+        const raw = base * (1 + 0.15 * (level - 1));
+        return Math.round(Math.min(base * maxRatio, raw));
+    }
 
     function saveGame() {
         if (state.isGameOver) return;
@@ -223,7 +422,8 @@
                 state.towers = data.towers.map(t => ({
                     ...TOWER_DEFS[t.type], ...t,
                     cooldown: 0, laserCharge: 0, currentTarget: null, isFiring: false, searchDelay: 0,
-                    partner: null, collisions: 0, inactiveTimer: 0 
+                    partner: null, collisions: 0, inactiveTimer: 0,
+                    baseDamage: TOWER_DEFS[t.type].damage, baseCooldownMax: TOWER_DEFS[t.type].cooldownMax, baseRange: TOWER_DEFS[t.type].range, baseProd: TOWER_DEFS[t.type].prod
                 }));
 
                 const gelatins = state.towers.filter(t => t.type === 'gelatin' && t.isCompleted);
@@ -241,12 +441,11 @@
                         const elapsedMs = Date.now() - savedTime;
                         const minutes = elapsedMs / (1000 * 60);
                         if (minutes > 0.1) { 
-                            const offlineReward = Math.round(state.wave * 50 * minutes / 30);
+                            const cappedMinutes = Math.min(minutes, 24 * 60);
+                            const offlineReward = Math.round(state.wave * 50 * cappedMinutes / 30);
                             if (offlineReward > 0) {
                                 state.money += offlineReward;
-                                setTimeout(() => {
-                                    alert(`💤 오프라인 방치 보상!\n\n방치 시간: ${minutes.toFixed(1)}분\n획득 골드: 💰 ${offlineReward}\n\n(수식: 현재 웨이브 * 50 * 분 / 30)`);
-                                }, 300);
+                                showOfflineRewardPopup(cappedMinutes, offlineReward);
                             }
                         }
                     }
@@ -257,6 +456,17 @@
         return false;
     }
 
+    function showOfflineRewardPopup(minutes, reward) {
+        const overlay = document.getElementById('offline-reward-overlay');
+        const text = document.getElementById('offline-reward-text');
+        text.textContent = `방치 시간: ${minutes.toFixed(1)}분\n획득 골드: 💰 ${reward}`;
+        overlay.style.display = 'flex';
+    }
+
+    window.closeOfflineRewardPopup = function() {
+        document.getElementById('offline-reward-overlay').style.display = 'none';
+    };
+
     window.triggerReset = function() {
         if (confirm("정말 게임을 완전히 초기화하시겠습니까?\n모든 골드, 배치와 웨이브 진행도가 리셋됩니다.")) {
             localStorage.removeItem(SAVE_KEY); localStorage.removeItem('defense_bob_save_time'); location.reload();
@@ -264,23 +474,79 @@
     };
 
     function initEnvironment() {
-        state.environmentProps = []; const checkPathX = canvas.width / 2 || 250;
+        state.environmentProps = []; const checkPathX = gameWidth / 2 || 250;
         for (let i = 0; i < 40; i++) {
-            let x = Math.random() * canvas.width; let y = Math.random() * canvas.height;
-            while (Math.abs(x - checkPathX) < 45) { x = Math.random() * canvas.width; }
+            let x = Math.random() * gameWidth; let y = Math.random() * gameHeight;
+            while (Math.abs(x - checkPathX) < 45) { x = Math.random() * gameWidth; }
             let type = Math.floor(Math.random() * 3);
             let color = '#fff'; if (type === 1) color = Math.random() > 0.5 ? '#f1c40f' : '#e74c3c';
             state.environmentProps.push({ x, y, type, color });
         }
     }
 
+    let lastGameWidth = 0;
+    let lastGameHeight = 0;
+    let gameWidth = 0;
+    let gameHeight = 0;
+
     function resizeCanvas() {
-        canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight;
-        if (state.environmentProps.length === 0) initEnvironment(); 
+        const dpr = Math.max(1, window.devicePixelRatio || 1);
+        const rect = canvas.getBoundingClientRect();
+        const newWidth = Math.floor(rect.width * dpr);
+        const newHeight = Math.floor(rect.height * dpr);
+        const newGameWidth = rect.width;
+        const newGameHeight = rect.height;
+
+        if (lastGameWidth > 0 && lastGameHeight > 0 && (newGameWidth !== lastGameWidth || newGameHeight !== lastGameHeight)) {
+            const scaleX = newGameWidth / lastGameWidth;
+            const scaleY = newGameHeight / lastGameHeight;
+            const scaleAvg = (scaleX + scaleY) / 2;
+
+            state.towers.forEach(t => {
+                t.x *= scaleX; t.y *= scaleY;
+                if (typeof t.radius === 'number') t.radius *= scaleAvg;
+                if (typeof t.range === 'number' && t.range > 0) t.range *= scaleAvg;
+                if (typeof t.baseRange === 'number' && t.baseRange > 0) t.baseRange *= scaleAvg;
+            });
+            state.enemies.forEach(e => {
+                e.x *= scaleX; e.y *= scaleY;
+                if (typeof e.radius === 'number') e.radius *= scaleAvg;
+                if (typeof e.speed === 'number') e.speed *= scaleAvg;
+                if (typeof e.kbVelocity === 'number') e.kbVelocity *= scaleAvg;
+            });
+            state.particles.forEach(p => {
+                if (typeof p.x === 'number') p.x *= scaleX;
+                if (typeof p.y === 'number') p.y *= scaleY;
+                if (typeof p.radius === 'number') p.radius *= scaleAvg;
+            });
+            state.projectiles.forEach(p => {
+                if (typeof p.x === 'number') p.x *= scaleX;
+                if (typeof p.y === 'number') p.y *= scaleY;
+                if (typeof p.width === 'number') p.width *= scaleAvg;
+                if (typeof p.distance === 'number') p.distance *= scaleAvg;
+                if (typeof p.maxDistance === 'number') p.maxDistance *= scaleAvg;
+                if (typeof p.speed === 'number') p.speed *= scaleAvg;
+            });
+            state.environmentProps.forEach(p => {
+                p.x *= scaleX; p.y *= scaleY;
+            });
+        }
+
+        gameWidth = newGameWidth;
+        gameHeight = newGameHeight;
+        canvas.style.width = `${newGameWidth}px`;
+        canvas.style.height = `${newGameHeight}px`;
+        canvas.width = newWidth;
+        canvas.height = newHeight;
+        ctx.imageSmoothingEnabled = true;
+
+        lastGameWidth = newGameWidth;
+        lastGameHeight = newGameHeight;
+        if (state.environmentProps.length === 0) initEnvironment();
     }
     window.addEventListener('resize', resizeCanvas); setTimeout(resizeCanvas, 50);
 
-    window.switchTab = function(category) {
+    window.switchTab = function(event, category) {
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
         event.currentTarget.classList.add('active');
         document.querySelectorAll('.card').forEach(card => {
@@ -303,25 +569,44 @@
         let spawnList = [];
         const hpMultiplier = Math.pow(1.25, waveNum - 1); 
         const speedMultiplier = 1 + (waveNum - 1) * 0.02; 
+        const densityMultiplier = waveNum >= 20 ? 1 + (waveNum - 19) * 0.75 : 1;
+        const addSpawn = (type, count, speedMult = speedMultiplier) => {
+            const finalCount = Math.max(0, Math.round(count * densityMultiplier));
+            for (let i = 0; i < finalCount; i++) {
+                spawnList.push({ type, hpMult: hpMultiplier, speedMult });
+            }
+        };
         
         let goblinCount = 5 + Math.floor(waveNum * 1.5);
-        for(let i=0; i<goblinCount; i++) spawnList.push({ type: 'goblin', hpMult: hpMultiplier, speedMult: speedMultiplier });
+        addSpawn('goblin', goblinCount);
 
         if (waveNum >= 2) {
             let scoutCount = 4 + Math.floor(waveNum * 1.2);
-            for(let i=0; i<scoutCount; i++) spawnList.push({ type: 'scout', hpMult: hpMultiplier, speedMult: speedMultiplier });
+            addSpawn('scout', scoutCount);
             let wolfCount = 3 + Math.floor(waveNum * 1.0);
-            for(let i=0; i<wolfCount; i++) spawnList.push({ type: 'wolf', hpMult: hpMultiplier, speedMult: speedMultiplier });
+            addSpawn('wolf', wolfCount);
         }
         if (waveNum >= 3) {
             let shieldCount = 2 + Math.floor(waveNum * 0.8);
-            for(let i=0; i<shieldCount; i++) spawnList.push({ type: 'shield', hpMult: hpMultiplier, speedMult: speedMultiplier });
+            addSpawn('shield', shieldCount);
             let golemCount = Math.floor(waveNum / 2);
-            for(let i=0; i<golemCount; i++) spawnList.push({ type: 'golem', hpMult: hpMultiplier, speedMult: speedMultiplier });
+            addSpawn('golem', golemCount);
         }
         if (waveNum >= 4) {
             let healerCount = 1 + Math.floor(waveNum / 3);
-            for(let i=0; i<healerCount; i++) spawnList.push({ type: 'healer', hpMult: hpMultiplier, speedMult: speedMultiplier });
+            addSpawn('healer', healerCount);
+        }
+        if (waveNum >= 5) {
+            let grapeCount = 2 + Math.floor(waveNum / 3);
+            addSpawn('grape', grapeCount, speedMultiplier * 0.95);
+        }
+        if (waveNum >= 6) {
+            let milkCount = 1 + Math.floor(waveNum / 4);
+            addSpawn('milk', milkCount, speedMultiplier * 0.9);
+        }
+        if (waveNum >= 7) {
+            let friesCount = 1 + Math.floor(waveNum / 4);
+            addSpawn('fries', friesCount, speedMultiplier * 0.92);
         }
 
         spawnList.sort(() => Math.random() - 0.5); state.enemiesToSpawn = spawnList; state.isWaveActive = true;
@@ -331,6 +616,563 @@
         state.particles.push({ type, x, y, life: 1.0, ...options });
     }
 
+    function createEnemyEntity(type, hpMult, speedMult, x, y) {
+        const def = ENEMY_DEFS[type];
+        return {
+            x, y, ...def,
+            hp: def.maxHp * hpMult,
+            maxHp: def.maxHp * hpMult,
+            speed: def.speed * speedMult,
+            isWet: false, wetTimer: 0, wetSlow: 1.0,
+            kbVelocity: 0, stunTimer: 0, type,
+            oilTimer: 0, oilSlow: 1.0,
+            shieldHp: 0, shieldTimer: 0,
+            statusImmune: false, slowImmune: false
+        };
+    }
+
+    function getWaveInfoLines(waveNum) {
+        const lines = [];
+        const hpMultiplier = Math.pow(1.25, waveNum - 1);
+        const speedMultiplier = 1 + (waveNum - 1) * 0.02;
+
+        const goblinCount = 5 + Math.floor(waveNum * 1.5);
+        lines.push(`🐥 병아리 x${goblinCount}`);
+        if (waveNum >= 2) {
+            lines.push(`🍬 스카우트 x${4 + Math.floor(waveNum * 1.2)}`);
+            lines.push(`🍜 늑대 x${3 + Math.floor(waveNum * 1.0)}`);
+        }
+        if (waveNum >= 3) {
+            lines.push(`🍞 실드 x${2 + Math.floor(waveNum * 0.8)}`);
+            lines.push(`🍔 골렘 x${Math.floor(waveNum / 2)}`);
+        }
+        if (waveNum >= 4) {
+            lines.push(`🥤 힐러 x${1 + Math.floor(waveNum / 3)}`);
+        }
+        if (waveNum >= 5) {
+            lines.push(`🍇 포도 x${2 + Math.floor(waveNum / 3)}`);
+        }
+        if (waveNum >= 6) {
+            lines.push(`🥛 우유 x${1 + Math.floor(waveNum / 4)}`);
+        }
+        if (waveNum >= 7) {
+            lines.push(`🍟 감자튀김 x${1 + Math.floor(waveNum / 4)}`);
+        }
+
+        lines.push('');
+        lines.push(`체력 배율: x${hpMultiplier.toFixed(2)}`);
+        lines.push(`이속 배율: x${speedMultiplier.toFixed(2)}`);
+        return lines;
+    }
+
+    function openWaveInfo() {
+        const textNode = document.getElementById('wave-info-text');
+        const nowLines = getWaveInfoLines(state.wave);
+        const nextLines = getWaveInfoLines(state.wave + 1);
+        textNode.innerText = `[현재 웨이브 ${state.wave}]\n${nowLines.join('\n')}\n\n[다음 웨이브 ${state.wave + 1}]\n${nextLines.join('\n')}`;
+        document.getElementById('wave-info-overlay').style.display = 'flex';
+        setPause('wave-info', true);
+    }
+
+    window.closeWaveInfo = function() {
+        document.getElementById('wave-info-overlay').style.display = 'none';
+        setPause('wave-info', false);
+    };
+
+    const buildMenu = document.getElementById('build-menu');
+    let cardPointerDown = null;
+    let ignoreNextCardClick = false;
+    let tooltipPreviewFrame = null;
+    let tooltipPreviewTime = 0;
+    let tooltipPreviewType = 'cannon';
+    const previewCanvas = document.getElementById('card-tooltip-video-canvas');
+    const previewCtx = previewCanvas ? previewCanvas.getContext('2d') : null;
+    const previewLabel = document.querySelector('.tooltip-video-label');
+
+    let tooltipSandbox = null;
+
+    function resetTooltipEnemy(sandbox) {
+        const e = sandbox.enemies[0];
+        const t = sandbox.towers[0];
+        e.x = sandbox.enemySpawnX;
+        e.y = sandbox.enemySpawnY;
+        e.hp = e.maxHp;
+        e.isWet = false;
+        e.wetTimer = 0;
+        e.wetSlow = 1.0;
+        e.oilTimer = 0;
+        e.stunTimer = 0;
+        e.kbVelocity = 0;
+        e.lastGelatinBounce = 0;
+        t.currentTarget = null;
+        t.searchDelay = 0;
+        t.laserCharge = 0;
+        t.isFiring = false;
+        sandbox.projectiles = [];
+        sandbox.effects = [];
+    }
+
+    function createTooltipSandbox(type) {
+        const def = TOWER_DEFS[type];
+        const h = previewCanvas.height;
+        const laneX = Math.floor(previewCanvas.width * 0.62);
+        const baseY = Math.floor(h * 0.56);
+
+        let towerX = laneX - 60;
+        if (type === 'shotgun') towerX = laneX - 40;
+        if (type === 'pyro') towerX = laneX - 42;
+        if (type === 'crossbow') towerX = laneX - 72;
+        if (type === 'fryer') towerX = laneX - 36;
+        if (type === 'log') towerX = laneX;
+
+        const tower = {
+            ...def,
+            x: towerX,
+            y: baseY,
+            type,
+            level: 1,
+            cooldown: 0,
+            currentTarget: null,
+            searchDelay: 0,
+            laserCharge: 0,
+            isFiring: false,
+            beamTx: 0,
+            beamTy: 0,
+            angle: type === 'log' ? -Math.PI / 2 : (def.angle || -Math.PI / 2),
+            targetAngle: type === 'log' ? -Math.PI / 2 : (def.angle || -Math.PI / 2),
+            currentAngle: type === 'log' ? -Math.PI / 2 : (def.angle || -Math.PI / 2),
+            baseDamage: def.damage,
+            baseCooldownMax: def.cooldownMax,
+            baseRange: def.range,
+            baseProd: def.prod,
+            stunDuration: def.stunDuration || 0.5,
+            totalCost: def.cost,
+            isCompleted: type !== 'gelatin',
+            collisions: 0,
+            inactiveTimer: 0,
+            partner: null
+        };
+
+        const goblin = ENEMY_DEFS.goblin;
+        const enemy = {
+            ...goblin,
+            type: 'goblin',
+            x: laneX,
+            y: -18,
+            hp: goblin.maxHp,
+            maxHp: goblin.maxHp,
+            speed: goblin.speed * 0.8,
+            isWet: false,
+            wetTimer: 0,
+            wetSlow: 1.0,
+            kbVelocity: 0,
+            stunTimer: 0,
+            oilTimer: 0,
+            lastGelatinBounce: 0
+        };
+
+        const sandbox = {
+            type,
+            laneX,
+            towers: [tower],
+            enemies: [enemy],
+            projectiles: [],
+            particles: [],
+            effects: [],
+            enemySpawnX: laneX,
+            enemySpawnY: -18
+        };
+
+        if (type === 'gelatin') {
+            tower.isCompleted = true;
+            const partner = {
+                ...tower,
+                x: laneX + 30,
+                y: baseY,
+                currentTarget: null,
+                partner: tower
+            };
+            tower.x = laneX - 30;
+            tower.partner = partner;
+            sandbox.towers = [tower, partner];
+        } else if (type === 'amplifier') {
+            const cannonDef = TOWER_DEFS.cannon;
+            const cannon = {
+                ...cannonDef,
+                x: tower.x + 52,
+                y: tower.y,
+                type: 'cannon',
+                level: 1,
+                cooldown: 0,
+                currentTarget: null,
+                searchDelay: 0,
+                laserCharge: 0,
+                isFiring: false,
+                beamTx: 0,
+                beamTy: 0,
+                angle: cannonDef.angle || -Math.PI / 2,
+                targetAngle: cannonDef.angle || -Math.PI / 2,
+                currentAngle: cannonDef.angle || -Math.PI / 2,
+                baseDamage: cannonDef.damage,
+                baseCooldownMax: cannonDef.cooldownMax,
+                baseRange: cannonDef.range,
+                baseProd: cannonDef.prod,
+                stunDuration: cannonDef.stunDuration || 0.5,
+                totalCost: cannonDef.cost,
+                isCompleted: true,
+                collisions: 0,
+                inactiveTimer: 0,
+                partner: null
+            };
+            sandbox.towers = [tower, cannon];
+        }
+
+        return sandbox;
+    }
+
+    function tooltipApplyDamage(target, amount) {
+        if (amount <= 0 || !target) return;
+        target.hp -= amount;
+    }
+
+    function updateTooltipSandbox(sandbox, dt) {
+        const e = sandbox.enemies[0];
+
+        for (let i = sandbox.effects.length - 1; i >= 0; i--) {
+            sandbox.effects[i].life -= dt;
+            if (sandbox.effects[i].life <= 0) sandbox.effects.splice(i, 1);
+        }
+
+        if (e.isWet) { e.wetTimer -= dt; if (e.wetTimer <= 0) { e.isWet = false; e.wetSlow = 1.0; } }
+        if (e.oilTimer > 0) e.oilTimer -= dt;
+
+        if (e.stunTimer > 0) {
+            e.stunTimer -= dt;
+            if (e.kbVelocity > 0) { e.y -= e.kbVelocity * dt; e.kbVelocity -= 300 * dt; if (e.kbVelocity < 0) e.kbVelocity = 0; }
+        } else {
+            if (e.kbVelocity > 0) { e.y -= e.kbVelocity * dt; e.kbVelocity -= 300 * dt; if (e.kbVelocity < 0) e.kbVelocity = 0; }
+            else {
+                const slowMult = (e.isWet ? e.wetSlow : 1.0) * (e.oilTimer > 0 ? 0.7 : 1.0);
+                e.y += e.speed * slowMult * dt;
+            }
+        }
+
+        if (e.hp <= 0 || e.y >= previewCanvas.height + e.radius) {
+            resetTooltipEnemy(sandbox);
+            return;
+        }
+
+        for (let i = sandbox.projectiles.length - 1; i >= 0; i--) {
+            const p = sandbox.projectiles[i];
+            if (p.type === 'cannon_ball' || p.type === 'arrow') {
+                let dx = e.x - p.x; let dy = e.y - p.y; let dist = Math.hypot(dx, dy);
+                if (dist < 8) {
+                    tooltipApplyDamage(e, p.damage);
+                    sandbox.projectiles.splice(i, 1); continue;
+                }
+                p.x += (dx / (dist || 1)) * p.speed * dt; p.y += (dy / (dist || 1)) * p.speed * dt;
+            } else if (p.type === 'mortar_shell') {
+                p.progress += p.speed * dt;
+                if (p.progress >= 1) {
+                    if (Math.hypot(e.x - p.tx, e.y - p.ty) <= 46) tooltipApplyDamage(e, p.damage);
+                    sandbox.projectiles.splice(i, 1);
+                } else {
+                    p.x = p.startX + (p.tx - p.startX) * p.progress;
+                    const arc = Math.sin(p.progress * Math.PI) * 24;
+                    p.y = p.startY + (p.ty - p.startY) * p.progress - arc;
+                }
+            } else if (p.type === 'log_obj') {
+                let moveStep = p.speed * dt; p.distance += moveStep;
+                if (p.distance > p.maxDistance) { sandbox.projectiles.splice(i, 1); continue; }
+                p.x += Math.cos(p.angle) * moveStep; p.y += Math.sin(p.angle) * moveStep;
+                if (Math.hypot(e.x - p.x, e.y - p.y) < e.radius + 14) {
+                    tooltipApplyDamage(e, p.damage);
+                    e.kbVelocity = 70;
+                }
+            } else if (p.type === 'oil_patch') {
+                p.life -= dt;
+                if (p.life <= 0) { sandbox.projectiles.splice(i, 1); continue; }
+                p.ripple += dt * 18;
+                const lateral = Math.abs((e.y - p.y) * Math.cos(p.angle) - (e.x - p.x) * Math.sin(p.angle));
+                const forward = (e.x - p.x) * Math.cos(p.angle) + (e.y - p.y) * Math.sin(p.angle);
+                if (forward > 0 && forward < p.length && lateral < e.radius + p.hitWidth / 2) {
+                    tooltipApplyDamage(e, p.damage * 0.2 * dt);
+                    e.oilTimer = 1.4;
+                }
+            }
+        }
+
+        sandbox.towers.forEach(t => {
+            let speedMult = 1.0;
+            sandbox.towers.forEach(other => {
+                if (other !== t && other.type === 'amplifier' && Math.hypot(t.x - other.x, t.y - other.y) <= other.range) {
+                    speedMult = Math.max(speedMult, 1 + Math.min(0.5, 0.10 + (other.level - 1) * 0.05));
+                }
+            });
+            t.speedMult = speedMult;
+            t.cooldown -= dt * speedMult;
+
+            if (t.type === 'gelatin') {
+                if (t.isCompleted && t.partner && t.x < t.partner.x) {
+                    if (!e.lastGelatinBounce || Date.now() - e.lastGelatinBounce > 800) {
+                        const d = distToSegment(e, t, t.partner);
+                        if (d < (e.radius + 6)) {
+                            applyStun(e, 0.5, 140);
+                            e.lastGelatinBounce = Date.now();
+                        }
+                    }
+                }
+                return;
+            }
+
+            if (t.type === 'fryer') {
+                if (t.cooldown <= 0) {
+                    t.cooldown = t.cooldownMax;
+                    let angle = e.x >= t.x ? 0 : Math.PI;
+                    sandbox.projectiles.push({ type: 'oil_patch', x: t.x, y: t.y, angle, damage: t.damage * 0.7, width: 40, length: 120, hitWidth: 26, hitList: [], life: 1.8, ripple: 0, flow: 0 });
+                }
+                return;
+            }
+
+            if (t.type === 'pyro') {
+                const inRange = Math.hypot(t.x - e.x, t.y - e.y) <= t.range;
+                t.currentTarget = inRange ? e : null;
+                if (!inRange) {
+                    t.laserCharge = 0;
+                    t.isFiring = false;
+                }
+                if (t.currentTarget) {
+                    t.laserCharge = Math.min(10, t.laserCharge + dt * 3.5); t.isFiring = true;
+                    t.beamTx = e.x; t.beamTy = e.y;
+                    t.targetAngle = Math.atan2(e.y - t.y, e.x - t.x);
+                    if (t.cooldown <= 0) {
+                        tooltipApplyDamage(e, t.damage + Math.floor(t.laserCharge));
+                        t.cooldown = t.cooldownMax;
+                    }
+                }
+                return;
+            }
+
+            let target = null;
+            if (t.range > 0 && Math.hypot(t.x - e.x, t.y - e.y) <= t.range) target = e;
+            t.currentTarget = target;
+
+            if (target && t.type !== 'sprinkler' && t.type !== 'log' && t.type !== 'tesla') {
+                t.targetAngle = Math.atan2(target.y - t.y, target.x - t.x);
+            }
+            if (t.currentAngle !== undefined) {
+                let diff = t.targetAngle - t.currentAngle;
+                while (diff < -Math.PI) diff += Math.PI * 2;
+                while (diff > Math.PI) diff -= Math.PI * 2;
+                t.currentAngle += diff * dt * 8;
+            }
+
+            if (t.type === 'log') {
+                if (t.cooldown <= 0) {
+                    t.cooldown = t.cooldownMax;
+                    sandbox.projectiles.push({ type: 'log_obj', x: t.x, y: t.y, speed: 120, angle: t.angle, damage: t.damage || 12, hitList: [], distance: 0, maxDistance: 130, rotation: 0 });
+                }
+                return;
+            }
+
+            if (target && t.cooldown <= 0) {
+                t.cooldown = t.cooldownMax;
+                if (t.type === 'cannon') {
+                    sandbox.projectiles.push({ type: 'cannon_ball', x: t.x, y: t.y, speed: 180, target, damage: t.damage });
+                } else if (t.type === 'shotgun') {
+                    tooltipApplyDamage(e, t.damage);
+                    sandbox.effects.push({ type: 'shotgun_burst', x: t.x, y: t.y, tx: target.x, ty: target.y, life: 0.2 });
+                } else if (t.type === 'mortar') {
+                    let dist = Math.hypot(target.x - t.x, target.y - t.y); let duration = Math.max(0.5, dist / 160);
+                    sandbox.projectiles.push({ type: 'mortar_shell', x: t.x, y: t.y, startX: t.x, startY: t.y, tx: target.x, ty: target.y, progress: 0, speed: 1 / duration, damage: t.damage });
+                } else if (t.type === 'sprinkler') {
+                    if (Math.hypot(t.x - e.x, t.y - e.y) <= t.range) {
+                        applyWet(e, 3.0, 0.85);
+                        sandbox.effects.push({ type: 'sprinkler_ring', x: t.x, y: t.y, r: t.range, life: 0.35 });
+                    }
+                } else if (t.type === 'tesla') {
+                    let dmg = e.isWet ? t.damage * 1.6 : t.damage;
+                    tooltipApplyDamage(e, dmg); applyStun(e, t.stunDuration || 0.5);
+                    sandbox.effects.push({ type: 'tesla_arc', x: t.x, y: t.y, tx: target.x, ty: target.y, life: 0.15 });
+                } else if (t.type === 'crossbow') {
+                    sandbox.projectiles.push({ type: 'arrow', x: t.x, y: t.y, speed: 450, target, damage: t.damage });
+                }
+            }
+        });
+    }
+
+    function drawTooltipSandbox(sandbox) {
+        const w = previewCanvas.width;
+        const h = previewCanvas.height;
+        const towers = sandbox.towers;
+        const e = sandbox.enemies[0];
+        const laneX = sandbox.laneX;
+
+        previewCtx.clearRect(0, 0, w, h);
+        previewCtx.fillStyle = '#27ae60';
+        previewCtx.fillRect(0, 0, w, h);
+
+        previewCtx.fillStyle = '#8b5a2b';
+        previewCtx.fillRect(laneX - 16, 0, 32, h);
+        previewCtx.fillStyle = '#7f8c8d';
+        for (let y = 0; y < h + 16; y += 14) {
+            previewCtx.fillRect(laneX - 18, y - 6, 2, 8);
+            previewCtx.fillRect(laneX + 16, y - 6, 2, 8);
+        }
+
+        towers.forEach(t => {
+            if (t.type === 'gelatin' && t.isCompleted && t.partner && t.x < t.partner.x) {
+                previewCtx.strokeStyle = 'rgba(155, 89, 182, 0.7)';
+                previewCtx.lineWidth = 4;
+                previewCtx.beginPath();
+                previewCtx.moveTo(t.x, t.y);
+                previewCtx.lineTo(t.partner.x, t.partner.y);
+                previewCtx.stroke();
+            }
+
+            if (t.type === 'amplifier') {
+                const buffed = towers.find(other => other.type === 'cannon');
+                if (buffed && Math.hypot(buffed.x - t.x, buffed.y - t.y) <= t.range) {
+                    previewCtx.strokeStyle = 'rgba(243, 156, 18, 0.5)';
+                    previewCtx.lineWidth = 2;
+                    previewCtx.beginPath();
+                    previewCtx.arc(t.x, t.y, t.range, 0, Math.PI * 2);
+                    previewCtx.stroke();
+                    previewCtx.strokeStyle = 'rgba(243, 156, 18, 0.65)';
+                    previewCtx.beginPath();
+                    previewCtx.moveTo(t.x, t.y);
+                    previewCtx.lineTo(buffed.x, buffed.y);
+                    previewCtx.stroke();
+                }
+            }
+        });
+
+        towers.forEach(t => {
+            if (t.type === 'pyro' && t.isFiring) {
+                previewCtx.strokeStyle = 'rgba(230,126,34,0.45)';
+                previewCtx.lineWidth = 8;
+                previewCtx.beginPath();
+                previewCtx.moveTo(t.x, t.y);
+                previewCtx.lineTo(e.x, e.y);
+                previewCtx.stroke();
+                t.isFiring = false;
+            }
+
+            previewCtx.beginPath();
+            previewCtx.arc(t.x, t.y, t.radius, 0, Math.PI * 2);
+            previewCtx.fillStyle = t.color;
+            previewCtx.fill();
+            previewCtx.strokeStyle = '#2c3e50';
+            previewCtx.lineWidth = 1.6;
+            previewCtx.stroke();
+
+            previewCtx.save();
+            previewCtx.translate(t.x, t.y);
+            drawTowerDesign(previewCtx, t.type, t.currentAngle !== undefined ? t.currentAngle : (t.angle || 0), t);
+            previewCtx.restore();
+        });
+
+        for (const p of sandbox.projectiles) {
+            if (p.type === 'cannon_ball') {
+                previewCtx.beginPath(); previewCtx.arc(p.x, p.y, 4, 0, Math.PI * 2); previewCtx.fillStyle = '#2ecc71'; previewCtx.fill();
+            } else if (p.type === 'arrow') {
+                previewCtx.fillStyle = '#f5deb3'; previewCtx.fillRect(p.x - 6, p.y - 1, 12, 2);
+            } else if (p.type === 'mortar_shell') {
+                previewCtx.beginPath(); previewCtx.arc(p.x, p.y, 6, 0, Math.PI * 2); previewCtx.fillStyle = '#795548'; previewCtx.fill();
+                previewCtx.strokeStyle = '#3e2723'; previewCtx.lineWidth = 1; previewCtx.stroke();
+            } else if (p.type === 'log_obj') {
+                previewCtx.save();
+                previewCtx.translate(p.x, p.y);
+                previewCtx.rotate(p.angle);
+                previewCtx.fillStyle = '#e1b12c'; previewCtx.fillRect(-6, -16, 12, 32);
+                previewCtx.fillStyle = '#c23616'; previewCtx.fillRect(-3, -20, 6, 4); previewCtx.fillRect(-3, 16, 6, 4);
+                previewCtx.restore();
+            } else if (p.type === 'oil_patch') {
+                previewCtx.save();
+                previewCtx.translate(p.x, p.y);
+                previewCtx.rotate(p.angle);
+                previewCtx.fillStyle = 'rgba(243, 156, 18, 0.35)';
+                previewCtx.fillRect(0, -p.width / 2, p.length, p.width);
+                previewCtx.fillStyle = 'rgba(231, 76, 60, 0.24)';
+                previewCtx.fillRect(6, -p.width / 2 + 6, Math.max(0, p.length - 12), Math.max(0, p.width - 12));
+                previewCtx.restore();
+            }
+        }
+
+        for (const fx of sandbox.effects) {
+            previewCtx.save();
+            previewCtx.globalAlpha = Math.max(0, fx.life * 5);
+            if (fx.type === 'shotgun_burst') {
+                previewCtx.strokeStyle = 'rgba(236, 240, 241, 0.75)';
+                previewCtx.lineWidth = 2.5;
+                for (let i = -1; i <= 1; i++) {
+                    previewCtx.beginPath();
+                    previewCtx.moveTo(fx.x, fx.y);
+                    previewCtx.lineTo(fx.tx + i * 8, fx.ty + i * 6);
+                    previewCtx.stroke();
+                }
+            } else if (fx.type === 'tesla_arc') {
+                previewCtx.strokeStyle = 'rgba(241, 196, 15, 0.95)';
+                previewCtx.lineWidth = 2;
+                previewCtx.beginPath();
+                const mx = (fx.x + fx.tx) / 2 + (Math.random() - 0.5) * 12;
+                const my = (fx.y + fx.ty) / 2 + (Math.random() - 0.5) * 12;
+                previewCtx.moveTo(fx.x, fx.y);
+                previewCtx.lineTo(mx, my);
+                previewCtx.lineTo(fx.tx, fx.ty);
+                previewCtx.stroke();
+            } else if (fx.type === 'sprinkler_ring') {
+                previewCtx.strokeStyle = 'rgba(52, 152, 219, 0.7)';
+                previewCtx.lineWidth = 2;
+                previewCtx.beginPath();
+                previewCtx.arc(fx.x, fx.y, fx.r * (1 - fx.life), 0, Math.PI * 2);
+                previewCtx.stroke();
+            }
+            previewCtx.restore();
+        }
+
+        previewCtx.font = `${e.radius * 1.8}px Apple Color Emoji, Segoe UI Emoji`;
+        previewCtx.textAlign = 'center';
+        previewCtx.textBaseline = 'middle';
+        previewCtx.fillText('🐥', e.x, e.y);
+        if (e.stunTimer > 0) { previewCtx.font = 'bold 10px Arial'; previewCtx.fillText('⚡', e.x - 10, e.y - 10); }
+        if (e.isWet) { previewCtx.font = '9px Arial'; previewCtx.fillText('💧', e.x + 10, e.y - 10); }
+        if (e.oilTimer > 0) { previewCtx.font = '9px Arial'; previewCtx.fillText('🍳', e.x + 10, e.y + 10); }
+        const ratio = Math.max(0, e.hp / e.maxHp);
+        previewCtx.fillStyle = '#e74c3c'; previewCtx.fillRect(e.x - 10, e.y - e.radius - 8, 20, 3);
+        previewCtx.fillStyle = '#2ecc71'; previewCtx.fillRect(e.x - 10, e.y - e.radius - 8, 20 * ratio, 3);
+    }
+
+    function renderTooltipPreview(dt) {
+        if (!previewCtx || !tooltipSandbox) return;
+        tooltipPreviewTime += dt;
+        updateTooltipSandbox(tooltipSandbox, dt);
+        drawTooltipSandbox(tooltipSandbox);
+    }
+
+    function startTooltipPreview(type) {
+        tooltipPreviewType = type || 'cannon';
+        tooltipSandbox = createTooltipSandbox(tooltipPreviewType);
+        if (previewLabel) {
+            previewLabel.innerText = `${TOWER_DEFS[tooltipPreviewType].name} Lv.1 vs 🐥`;
+        }
+        if (tooltipPreviewFrame) return;
+        tooltipPreviewTime = 0;
+        let last = performance.now();
+        const step = (time) => {
+            const dt = (time - last) / 1000;
+            last = time;
+            renderTooltipPreview(dt);
+            tooltipPreviewFrame = requestAnimationFrame(step);
+        };
+        tooltipPreviewFrame = requestAnimationFrame(step);
+    }
+
+    function stopTooltipPreview() {
+        if (tooltipPreviewFrame) cancelAnimationFrame(tooltipPreviewFrame);
+        tooltipPreviewFrame = null;
+        tooltipSandbox = null;
+    }
     document.querySelectorAll('.card').forEach(card => {
         const type = card.dataset.type;
         const startDrag = (e) => {
@@ -339,12 +1181,153 @@
                 currentCost = 0;
             }
             if (state.isGameOver || state.money < currentCost) return;
+            hideCardTooltip();
             state.isDraggingCard = true; state.dragCardType = type;
             closeUpgradeMenu(); updateDragPos(e);
         };
-        card.addEventListener('mousedown', startDrag);
-        card.addEventListener('touchstart', (e) => { e.preventDefault(); startDrag(e.touches[0]); }, {passive: false});
+
+        const showTooltip = () => {
+            const info = CARD_INFO[type];
+            if (!info) return;
+            const tooltip = document.getElementById('card-tooltip');
+            document.getElementById('card-tooltip-title').innerText = TOWER_DEFS[type].name;
+            document.getElementById('card-tooltip-desc').innerText = info.desc;
+            document.getElementById('card-tooltip-stats').innerText = info.stats.join(' • ');
+            tooltip.style.display = 'block';
+            setPause('tooltip', true);
+            startTooltipPreview(type);
+        };
+
+        const hideTooltip = () => {
+            document.getElementById('card-tooltip').style.display = 'none';
+            setPause('tooltip', false);
+            stopTooltipPreview();
+        };
+
+        card.addEventListener('pointerdown', (e) => {
+            if (e.pointerType === 'touch') {
+                cardPointerDown = {
+                    target: card, type, x: e.clientX, y: e.clientY,
+                    time: performance.now(), hasMoved: false, isScrolling: false,
+                    timer: setTimeout(() => {
+                        if (cardPointerDown && !cardPointerDown.hasMoved) {
+                            showTooltip();
+                            ignoreNextCardClick = true;
+                        }
+                    }, 450)
+                };
+            } else {
+                startDrag(e);
+            }
+        });
+
+        card.addEventListener('pointermove', (e) => {
+            if (cardPointerDown && cardPointerDown.target === card) {
+                const dx = e.clientX - cardPointerDown.x;
+                const dy = e.clientY - cardPointerDown.y;
+                if (!cardPointerDown.hasMoved && Math.hypot(dx, dy) > 10) {
+                    cardPointerDown.hasMoved = true;
+                    clearTimeout(cardPointerDown.timer);
+                    hideCardTooltip();
+                    if (Math.abs(dx) > Math.abs(dy)) {
+                        cardPointerDown.isScrolling = true;
+                    } else {
+                        startDrag(e);
+                    }
+                }
+                if (state.isDraggingCard) {
+                    updateDragPos(e);
+                }
+            }
+        });
+
+        const clearCardPointerDown = () => {
+            if (cardPointerDown && cardPointerDown.timer) {
+                clearTimeout(cardPointerDown.timer);
+            }
+            cardPointerDown = null;
+        };
+
+        card.addEventListener('pointerup', (e) => {
+            if (cardPointerDown && cardPointerDown.target === card) {
+                if (cardPointerDown.timer) {
+                    clearTimeout(cardPointerDown.timer);
+                }
+                cardPointerDown = null;
+                hideCardTooltip();
+            }
+        });
+
+        card.addEventListener('pointercancel', () => {
+            if (cardPointerDown && cardPointerDown.timer) {
+                clearTimeout(cardPointerDown.timer);
+            }
+            cardPointerDown = null;
+            hideCardTooltip();
+        });
+        card.addEventListener('pointerleave', () => {
+            if (cardPointerDown && cardPointerDown.timer) {
+                clearTimeout(cardPointerDown.timer);
+            }
+            cardPointerDown = null;
+            hideCardTooltip();
+        });
+        card.addEventListener('click', (e) => {
+            if (ignoreNextCardClick) {
+                ignoreNextCardClick = false;
+                e.stopPropagation();
+                return;
+            }
+            hideTooltip();
+        });
     });
+
+    const resetCardPointer = () => {
+        hideCardTooltip();
+        if (cardPointerDown && cardPointerDown.timer) {
+            clearTimeout(cardPointerDown.timer);
+        }
+        cardPointerDown = null;
+    };
+
+    window.addEventListener('pointerup', resetCardPointer);
+    window.addEventListener('pointercancel', resetCardPointer);
+    window.addEventListener('touchend', resetCardPointer);
+    window.addEventListener('touchcancel', resetCardPointer);
+
+    buildMenu.addEventListener('pointerdown', (e) => {
+        if (e.pointerType === 'touch') {
+            buildMenu.dataset.touchStartX = e.clientX;
+            buildMenu.dataset.touchStartY = e.clientY;
+            buildMenu.dataset.touchScrolling = 'true';
+        }
+    });
+
+    buildMenu.addEventListener('pointermove', (e) => {
+        if (buildMenu.dataset.touchScrolling === 'true') {
+            const dx = Math.abs(e.clientX - buildMenu.dataset.touchStartX);
+            const dy = Math.abs(e.clientY - buildMenu.dataset.touchStartY);
+            if (dx > 10 && dx > dy) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        }
+    });
+
+    buildMenu.addEventListener('pointerup', () => { buildMenu.dataset.touchScrolling = 'false'; });
+    buildMenu.addEventListener('pointercancel', () => { buildMenu.dataset.touchScrolling = 'false'; });
+
+    document.getElementById('btn-wave-info').addEventListener('click', openWaveInfo);
+
+    function hideCardTooltip() {
+        document.getElementById('card-tooltip').style.display = 'none';
+        setPause('tooltip', false);
+        stopTooltipPreview();
+        if (cardPointerDown && cardPointerDown.timer) {
+            clearTimeout(cardPointerDown.timer);
+        }
+        cardPointerDown = null;
+    }
 
     function updateDragPos(e) {
         if (!state.isDraggingCard) return;
@@ -442,7 +1425,9 @@
             x: x, y: y, type: type, level: 1, cooldown: 0, laserCharge: 0, searchDelay: 0,
             currentTarget: null, totalCost: cost, isFiring: false, beamTx: 0, beamTy: 0,
             angle: def.angle || -Math.PI / 2, targetAngle: def.angle || -Math.PI / 2, currentAngle: def.angle || -Math.PI / 2, 
-            isBuffed: false, speedMult: 1.0, ...def
+            isBuffed: false, speedMult: 1.0,
+            baseDamage: def.damage, baseCooldownMax: def.cooldownMax, baseRange: def.range, baseProd: def.prod,
+            ...def
         };
 
         if (type === 'gelatin') {
@@ -512,7 +1497,7 @@
         document.getElementById('build-menu').style.display = 'none';
         document.getElementById('upgrade-menu').style.display = 'flex';
         document.getElementById('btn-set-angle').style.display = tower.type === 'log' ? 'block' : 'none';
-        updateUpgradeUI(); setTimeout(resizeCanvas, 5);
+        updateUpgradeUI();
     }
 
     function closeUpgradeMenu() {
@@ -522,12 +1507,14 @@
         document.getElementById('tab-menu').style.display = 'flex';
         document.getElementById('build-menu').style.display = 'flex';
         document.getElementById('upgrade-menu').style.display = 'none';
-        setTimeout(resizeCanvas, 5);
+        setTimeout(resizeCanvas, 10);
     }
 
     function updateUpgradeUI() {
         if (!state.selectedTower) return;
-        let t = state.selectedTower; let cost = t.upCost * t.level; let refund = Math.floor(t.totalCost * 0.6);
+        let t = state.selectedTower;
+        let cost = getUpgradeCost(t.upCost, t.level);
+        let refund = Math.floor(t.totalCost * 0.6);
         
         document.getElementById('upgrade-info').innerHTML = `Lv.${t.level} ➡️ <span style="color:#2ecc71;">Lv.${t.level + 1}</span> ${t.name}`;
         let btn = document.getElementById('btn-do-upgrade'); btn.innerText = `업그레이드 (💰 ${cost})`;
@@ -536,8 +1523,10 @@
 
         let detailsHtml = '';
         if (t.type === 'mine') {
-            detailsHtml += `<div class="stat-row"><span>골드 생산량:</span> <span>💰 ${t.prod} ➡️ <span class="stat-up">💰 ${t.prod + 1}</span></span></div>`;
-            detailsHtml += `<div class="stat-row"><span>생산 대기시간:</span> <span>${t.cooldownMax.toFixed(2)}초 ➡️ <span class="stat-up">${Math.max(1.0, t.cooldownMax * 0.9).toFixed(2)}초</span></span></div>`;
+            const nextProd = Math.min(8, Math.round(getUpgradeValue(t.baseProd, t.level + 1)));
+            const nextCd = getCooldownValue(t.baseCooldownMax, t.level + 1);
+            detailsHtml += `<div class="stat-row"><span>골드 생산량:</span> <span>💰 ${t.prod} ➡️ <span class="stat-up">💰 ${nextProd}</span></span></div>`;
+            detailsHtml += `<div class="stat-row"><span>생산 대기시간:</span> <span>${t.cooldownMax.toFixed(2)}초 ➡️ <span class="stat-up">${nextCd.toFixed(2)}초</span></span></div>`;
         } else if (t.type === 'amplifier') {
             let curBuff = Math.min(50, 10 + (t.level - 1) * 5); let nextBuff = Math.min(50, curBuff + 5); let cap = nextBuff >= 50 ? ' (MAX)' : '';
             detailsHtml += `<div class="stat-row"><span>공격 속도 증가:</span> <span>📈 +${curBuff}% ➡️ <span class="stat-up">📈 +${nextBuff}%${cap}</span></span></div>`;
@@ -549,13 +1538,18 @@
             detailsHtml += `<div class="stat-row"><span>최대 충돌 횟수:</span> <span>7회 (고정)</span></div>`;
         } else {
             if (t.type !== 'sprinkler' && t.type !== 'log') {
-                let nextDmg = t.damage + Math.max(1, Math.floor(t.damage * 0.35));
-                detailsHtml += `<div class="stat-row"><span>기본 피해량:</span> <span>⚔️ ${Number.isInteger(t.damage) ? t.damage : t.damage.toFixed(2)} ➡️ <span class="stat-up">⚔️ ${Number.isInteger(nextDmg) ? nextDmg : nextDmg.toFixed(2)}</span></span></div>`;
+                let currentDamage = t.baseDamage ? getUpgradeValue(t.baseDamage, t.level) : t.damage;
+                let nextDamage = t.baseDamage ? getUpgradeValue(t.baseDamage, t.level + 1) : t.damage + Math.max(1, Math.floor(t.damage * 0.35));
+                detailsHtml += `<div class="stat-row"><span>기본 피해량:</span> <span>⚔️ ${Number.isInteger(currentDamage) ? currentDamage : currentDamage.toFixed(2)} ➡️ <span class="stat-up">⚔️ ${Number.isInteger(nextDamage) ? nextDamage : nextDamage.toFixed(2)}</span></span></div>`;
             } else if (t.type === 'log') {
                 let curDist = 200 + (t.level * 80); let nextDist = 200 + ((t.level + 1) * 80);
                 detailsHtml += `<div class="stat-row"><span>굴러가는 거리:</span> <span>📏 ${curDist} ➡️ <span class="stat-up">📏 ${nextDist}</span></span></div>`;
             }
-            if (t.range > 0) detailsHtml += `<div class="stat-row"><span>탐지 사거리:</span> <span>📏 ${t.range} ➡️ <span class="stat-up">📏 ${t.range + 15}</span></span></div>`;
+            if (t.range > 0) {
+                let currentRange = t.baseRange ? getRangeValue(t.baseRange, t.level) : t.range;
+                let nextRange = t.baseRange ? getRangeValue(t.baseRange, t.level + 1) : t.range + 15;
+                detailsHtml += `<div class="stat-row"><span>탐지 사거리:</span> <span>📏 ${currentRange} ➡️ <span class="stat-up">📏 ${nextRange}</span></span></div>`;
+            }
 
             let speedMult = 1.0;
             state.towers.forEach(other => {
@@ -570,18 +1564,28 @@
         document.getElementById('upgrade-details').innerHTML = detailsHtml;
     }
 
-    const handleUpgradeTouch = (e) => {
-        e.preventDefault(); let t = state.selectedTower; if (!t) return;
-        let cost = t.upCost * t.level;
+    const handleUpgradeTouch = () => {
+        let t = state.selectedTower; if (!t) return;
+        let cost = getUpgradeCost(t.upCost, t.level);
         if (state.money >= cost) {
             state.money -= cost; t.totalCost += cost; t.level++;
-            if (t.type === 'mine') t.prod += 1;
-            else if (t.type !== 'amplifier' && t.type !== 'gelatin') {
-                if (t.type === 'log') t.damage = 0; else t.damage += Math.max(1, Math.floor(t.damage * 0.35));
+            if (t.type === 'mine') {
+                t.prod = Math.min(8, Math.round(getUpgradeValue(t.baseProd, t.level)));
+                t.cooldownMax = getCooldownValue(t.baseCooldownMax, t.level);
+            } else if (t.type === 'amplifier') {
+                t.range = getRangeValue(t.baseRange, t.level);
+            } else if (t.type === 'gelatin') {
+                // gelatin remains the same mechanics, level only affects regen time
+            } else {
+                if (t.type === 'log') {
+                    t.damage = getUpgradeValue(t.baseDamage || 0, t.level);
+                } else {
+                    t.damage = getUpgradeValue(t.baseDamage, t.level);
+                }
+                if (t.range > 0) t.range = getRangeValue(t.baseRange, t.level);
+                t.cooldownMax = getCooldownValue(t.baseCooldownMax, t.level);
                 if (t.type === 'tesla') t.stunDuration = Math.min(1.8, (t.stunDuration || 0.5) + 0.25);
             }
-            if (t.range > 0) t.range += 15;
-            if (t.type !== 'amplifier' && t.type !== 'gelatin') t.cooldownMax = Math.max(0.1, t.cooldownMax * 0.9);
             
             if (t.type === 'gelatin' && t.partner) {
                 t.partner.level = t.level;
@@ -591,11 +1595,10 @@
             createParticle('text', t.x, t.y, { text: '레벨 업!', color: '#2ecc71' }); updateUpgradeUI(); saveGame();
         }
     };
-    document.getElementById('btn-do-upgrade').addEventListener('touchstart', handleUpgradeTouch, {passive:false});
     document.getElementById('btn-do-upgrade').addEventListener('click', handleUpgradeTouch);
 
-    const handleSellTouch = (e) => {
-        e.preventDefault(); if (!state.selectedTower) return;
+    const handleSellTouch = () => {
+        if (!state.selectedTower) return;
         let t = state.selectedTower; let refund = Math.floor(t.totalCost * 0.6); state.money += refund;
         createParticle('text', t.x, t.y, { text: '+💰' + refund, color: '#f1c40f' });
         
@@ -614,18 +1617,15 @@
         let index = state.towers.indexOf(t); if(index > -1) state.towers.splice(index, 1);
         closeUpgradeMenu(); saveGame();
     };
-    document.getElementById('btn-sell-tower').addEventListener('touchstart', handleSellTouch, {passive:false});
     document.getElementById('btn-sell-tower').addEventListener('click', handleSellTouch);
 
-    const handleSetAngleTouch = (e) => {
-        e.preventDefault();
+    const handleSetAngleTouch = () => {
         if (state.selectedTower && state.selectedTower.type === 'log') {
             state.settingAngleMode = true;
             document.getElementById('normal-bottom').style.display = 'none';
             document.getElementById('angle-ui').style.display = 'flex';
         }
     };
-    document.getElementById('btn-set-angle').addEventListener('touchstart', handleSetAngleTouch, {passive:false});
     document.getElementById('btn-set-angle').addEventListener('click', handleSetAngleTouch);
 
     window.finishAngleSetting = function() {
@@ -636,15 +1636,40 @@
         saveGame(); setTimeout(resizeCanvas, 5);
     };
 
-    const handleCancelTouch = (e) => { e.preventDefault(); closeUpgradeMenu(); };
-    document.getElementById('btn-cancel-upgrade').addEventListener('touchstart', handleCancelTouch, {passive:false});
+    const handleCancelTouch = () => { closeUpgradeMenu(); };
     document.getElementById('btn-cancel-upgrade').addEventListener('click', handleCancelTouch);
+
+    function applyStun(target, duration, knockback = 0) {
+        if (target.statusImmune) return false;
+        target.stunTimer = Math.max(target.stunTimer || 0, duration);
+        if (knockback > 0) target.kbVelocity = Math.max(target.kbVelocity || 0, knockback);
+        return true;
+    }
+
+    function applyWet(target, duration, slowMult) {
+        if (target.slowImmune) return false;
+        target.isWet = true;
+        target.wetTimer = Math.max(target.wetTimer || 0, duration);
+        target.wetSlow = Math.min(target.wetSlow || 1.0, slowMult);
+        return true;
+    }
+
+    function applyShield(target, shieldHp, duration) {
+        target.shieldHp = Math.max(target.shieldHp || 0, shieldHp);
+        target.shieldTimer = Math.max(target.shieldTimer || 0, duration);
+    }
 
     function applyDamageToEnemy(target, baseDamage) {
         let reduction = 0;
         state.enemies.forEach(e => {
             if (e.type === 'shield' && e.hp > 0 && Math.hypot(e.x - target.x, e.y - target.y) <= 70) reduction = 0.25; 
         });
+        if (target.shieldHp > 0 && baseDamage > 0) {
+            const absorbed = Math.min(target.shieldHp, baseDamage);
+            target.shieldHp -= absorbed;
+            baseDamage -= absorbed;
+        }
+        if (baseDamage <= 0) return;
         if (reduction > 0 && baseDamage > 0) createParticle('splash', target.x, target.y, { radius: 15, color: 'rgba(52, 152, 219, 0.4)' }); 
         target.hp -= baseDamage * (1 - reduction);
     }
@@ -685,13 +1710,8 @@
             state.spawnTimer += dt;
             if (state.spawnTimer > 1.2 && state.enemiesToSpawn.length > 0) {
                 state.spawnTimer = 0;
-                let next = state.enemiesToSpawn.shift(); let def = ENEMY_DEFS[next.type];
-                state.enemies.push({
-                    x: checkPathX + (Math.random() * 26 - 13), y: -20, ...def, 
-                    hp: def.maxHp * next.hpMult, maxHp: def.maxHp * next.hpMult,
-                    speed: def.speed * next.speedMult, isWet: false, wetTimer: 0, wetSlow: 1.0,
-                    kbVelocity: 0, stunTimer: 0, type: next.type, oilTimer: 0
-                });
+                let next = state.enemiesToSpawn.shift();
+                state.enemies.push(createEnemyEntity(next.type, next.hpMult, next.speedMult, checkPathX + (Math.random() * 26 - 13), -20));
             }
             if (state.enemiesToSpawn.length === 0 && state.enemies.length === 0) {
                 state.isWaveActive = false; state.waveDelay = 3.0;
@@ -704,8 +1724,49 @@
             if (state.waveDelay <= 0) { state.wave++; generateWave(state.wave); }
         }
 
+        state.enemies.forEach(enemy => {
+            enemy.statusImmune = false;
+            enemy.slowImmune = false;
+        });
+
         for (let i = state.enemies.length - 1; i >= 0; i--) {
             let e = state.enemies[i];
+            if (e.shieldTimer > 0) {
+                e.shieldTimer -= dt;
+                if (e.shieldTimer <= 0) e.shieldHp = 0;
+            }
+
+            if (e.type === 'milk') {
+                const auraRange = e.auraRange || 58;
+                state.enemies.forEach(other => {
+                    if (other !== e && Math.hypot(other.x - e.x, other.y - e.y) <= auraRange) {
+                        other.statusImmune = true;
+                        other.slowImmune = true;
+                        other.stunTimer = 0;
+                        other.wetTimer = 0;
+                        other.isWet = false;
+                        other.wetSlow = 1.0;
+                        other.oilTimer = 0;
+                        other.oilSlow = 1.0;
+                    }
+                });
+            }
+
+            if (e.type === 'fries') {
+                if (!e.shieldCooldown) e.shieldCooldown = e.shieldInterval || 5.0;
+                e.shieldCooldown -= dt;
+                if (e.shieldCooldown <= 0) {
+                    e.shieldCooldown = e.shieldInterval || 5.0;
+                    state.enemies.forEach(other => {
+                        if (other !== e && Math.hypot(other.x - e.x, other.y - e.y) <= (e.shieldRange || 70)) {
+                            applyShield(other, e.maxHp, 5.0);
+                            createParticle('text', other.x, other.y - 12, { text: '🛡️', color: '#3498db' });
+                        }
+                    });
+                    createParticle('splash', e.x, e.y, { radius: e.shieldRange || 70, color: 'rgba(52, 152, 219, 0.18)' });
+                }
+            }
+
             if (e.type === 'healer') {
                 if (!e.healCooldown) e.healCooldown = 1.5;  e.healCooldown -= dt;
                 if (e.healCooldown <= 0) {
@@ -726,18 +1787,24 @@
             if (e.isWet) { e.wetTimer -= dt; if (e.wetTimer <= 0) { e.isWet = false; e.wetSlow = 1.0; } }
             if (e.oilTimer > 0) { e.oilTimer -= dt; }
 
-            if (e.stunTimer > 0) {
+            if (e.stunTimer > 0 && !e.statusImmune) {
                 e.stunTimer -= dt;
                 if (e.kbVelocity > 0) { e.y -= e.kbVelocity * dt; e.kbVelocity -= 300 * dt; if (e.kbVelocity < 0) e.kbVelocity = 0; }
             } else {
                 if (e.kbVelocity > 0) { e.y -= e.kbVelocity * dt; e.kbVelocity -= 300 * dt; if (e.kbVelocity < 0) e.kbVelocity = 0; }
                 else {
-                    let slowMult = (e.isWet ? e.wetSlow : 1.0) * (e.oilTimer > 0 ? 0.7 : 1.0);
+                    let slowMult = e.slowImmune ? 1.0 : (e.isWet ? e.wetSlow : 1.0) * (e.oilTimer > 0 ? 0.7 : 1.0);
                     e.y += e.speed * slowMult * dt;
                 }
             }
 
             if (e.hp <= 0) {
+                if (e.type === 'grape') {
+                    for (let n = 0; n < 2; n++) {
+                        state.enemies.push(createEnemyEntity('grape_small', 0.85, 1.05, e.x + (n === 0 ? -10 : 10), e.y + (n === 0 ? -4 : 4)));
+                    }
+                    createParticle('text', e.x, e.y, { text: '🍇 분열!', color: '#9b59b6' });
+                }
                 state.money += e.reward;
                 createParticle('text', e.x, e.y, { text: '+💰' + e.reward, color: '#f1c40f' });
                 state.enemies.splice(i, 1); continue;
@@ -795,19 +1862,27 @@
                         }
                     }
                 });
-            } else if (p.type === 'oil_wave') {
-                let moveStep = p.speed * dt; p.distance += moveStep;
-                if (p.distance > p.maxDistance) { state.projectiles.splice(i, 1); continue; }
-                p.x += Math.cos(p.angle) * moveStep; p.y += Math.sin(p.angle) * moveStep;
-                if (Math.random() < 0.45) {
-                    createParticle('splash', p.x, p.y + (Math.random() - 0.5) * 12, { radius: 12, color: 'rgba(230, 126, 34, 0.5)' });
+            } else if (p.type === 'oil_patch') {
+                p.life -= dt;
+                if (p.life <= 0) { state.projectiles.splice(i, 1); continue; }
+                p.flow += dt * 8;
+                p.ripple += dt * 18;
+                if (Math.random() < 0.42) {
+                    createParticle('splash', p.x + Math.cos(p.angle) * (p.length * 0.4), p.y + Math.sin(p.angle) * (p.length * 0.4), { radius: 10, color: 'rgba(237, 127, 16, 0.35)' });
                 }
                 state.enemies.forEach(e => {
-                    if (Math.hypot(e.x - p.x, e.y - p.y) < e.radius + 18) {
+                    let lateral = Math.abs((e.y - p.y) * Math.cos(p.angle) - (e.x - p.x) * Math.sin(p.angle));
+                    let forward = (e.x - p.x) * Math.cos(p.angle) + (e.y - p.y) * Math.sin(p.angle);
+                    if (forward > 0 && forward < p.length && lateral < e.radius + p.hitWidth / 2) {
                         if (!p.hitList.includes(e)) {
-                            p.hitList.push(e); applyDamageToEnemy(e, p.damage);
-                            e.oilTimer = 3.0; 
+                            p.hitList.push(e);
+                            applyDamageToEnemy(e, p.damage * 0.32 * dt);
+                            e.oilTimer = 3.0;
+                            e.oilSlow = 0.7;
                             createParticle('text', e.x, e.y, { text: '🔥 기름!', color: '#d35400' });
+                        }
+                        if (e.oilTimer > 0) {
+                            applyDamageToEnemy(e, p.damage * 0.2 * dt);
                         }
                     }
                 });
@@ -847,8 +1922,7 @@
                             if (!e.lastGelatinBounce || Date.now() - e.lastGelatinBounce > 800) {
                                 let dist = distToSegment(e, t, t.partner);
                                 if (dist < (e.radius + 6)) {
-                                    e.kbVelocity = 140;
-                                    e.stunTimer = 0.5;
+                                    applyStun(e, 0.5, 140);
                                     e.lastGelatinBounce = Date.now();
                                     
                                     t.collisions++;
@@ -876,7 +1950,11 @@
                 if (t.cooldown <= 0) {
                     t.cooldown = t.cooldownMax;
                     let angle = t.x < canvas.width / 2 ? 0 : Math.PI;
-                    state.projectiles.push({ type: 'oil_wave', x: t.x, y: t.y, speed: 180, angle: angle, damage: t.damage, hitList: [], distance: 0, maxDistance: 240, rotation: 0 });
+                    state.projectiles.push({
+                        type: 'oil_patch', x: t.x, y: t.y, angle: angle,
+                        damage: t.damage * 0.7, width: 140, length: 240, hitWidth: 70,
+                        hitList: [], life: 3.2, ripple: 0, flow: 0
+                    });
                 }
                 return;
             }
@@ -967,13 +2045,13 @@
                 } else if (t.type === 'sprinkler') {
                     state.enemies.forEach(e => {
                         if (Math.hypot(t.x - e.x, t.y - e.y) <= t.range) { 
-                            e.isWet = true; e.wetTimer = 3.0; e.wetSlow = Math.min(e.wetSlow, Math.max(0.5, 0.85 - (t.level - 1) * 0.07)); 
+                            applyWet(e, 3.0, Math.max(0.5, 0.85 - (t.level - 1) * 0.07));
                         }
                     });
                     createParticle('splash', t.x, t.y, { radius: t.range });
                 } else if (t.type === 'tesla') {
                     let dmg = target.isWet ? t.damage * 1.6 : t.damage;
-                    applyDamageToEnemy(target, dmg); target.stunTimer = Math.max(target.stunTimer, t.stunDuration || 0.5);
+                    applyDamageToEnemy(target, dmg); applyStun(target, t.stunDuration || 0.5);
                     createParticle('lightning', t.x, t.y, { tx: target.x, ty: target.y });
                     if (target.isWet) {
                         let chainTarget = null, chainDist = 100;
@@ -981,7 +2059,7 @@
                             if (e !== target && Math.hypot(target.x - e.x, target.y - e.y) <= chainDist) { chainDist = Math.hypot(target.x - e.x, target.y - e.y); chainTarget = e; }
                         });
                         if (chainTarget) {
-                            applyDamageToEnemy(chainTarget, dmg); chainTarget.stunTimer = Math.max(chainTarget.stunTimer, t.stunDuration || 0.5);
+                            applyDamageToEnemy(chainTarget, dmg); applyStun(chainTarget, t.stunDuration || 0.5);
                             createParticle('lightning', target.x, target.y, { tx: chainTarget.x, ty: chainTarget.y });
                         }
                     }
@@ -1212,11 +2290,19 @@
             if (e.stunTimer > 0) { ctx.font = 'bold 11px Arial'; ctx.fillText('⚡', -12, -12); }
             if (e.isWet) { ctx.font = '10px Arial'; ctx.fillText('💧', 12, -12); }
             if (e.oilTimer > 0) { ctx.font = '10px Arial'; ctx.fillText('🍳', 12, 12); }
+            if (e.shieldHp > 0) { ctx.font = '10px Arial'; ctx.fillText('🛡️', -12, 12); }
             ctx.restore();
 
             let ratio = Math.max(0, e.hp / e.maxHp);
             ctx.fillStyle = '#e74c3c'; ctx.fillRect(e.x - 10, e.y - e.radius - 8, 20, 3.5);
             ctx.fillStyle = '#2ecc71'; ctx.fillRect(e.x - 10, e.y - e.radius - 8, 20 * ratio, 3.5);
+            if (e.shieldHp > 0) {
+                let shieldRatio = Math.max(0, Math.min(1, e.shieldHp / Math.max(e.maxHp, 1)));
+                ctx.fillStyle = 'rgba(52, 152, 219, 0.35)';
+                ctx.fillRect(e.x - 10, e.y - e.radius - 12, 20, 2.5);
+                ctx.fillStyle = '#3498db';
+                ctx.fillRect(e.x - 10, e.y - e.radius - 12, 20 * shieldRatio, 2.5);
+            }
         });
 
         state.projectiles.forEach(p => {
@@ -1235,10 +2321,34 @@
                 ctx.fillStyle = '#e1b12c'; ctx.fillRect(-6, -16, 12, 32); 
                 ctx.fillStyle = '#c23616'; ctx.fillRect(-3, -20, 6, 4); ctx.fillRect(-3, 16, 6, 4); 
                 ctx.restore();
-            } else if (p.type === 'oil_wave') {
+            } else if (p.type === 'oil_patch') {
                 ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.angle);
-                ctx.fillStyle = '#e67e22'; ctx.fillRect(-5, -12, 10, 24);
-                ctx.fillStyle = '#f39c12'; ctx.fillRect(-2, -10, 4, 20);
+                let width = p.width || 140;
+                let height = p.length || 240;
+                let wobble = Math.sin(p.ripple || 0) * 8;
+                ctx.fillStyle = 'rgba(243, 156, 18, 0.35)';
+                ctx.beginPath();
+                ctx.moveTo(0, -width / 2);
+                ctx.lineTo(height, -width / 2 + wobble * 0.3);
+                ctx.quadraticCurveTo(height + 12, 0, height, width / 2 - wobble * 0.3);
+                ctx.lineTo(0, width / 2);
+                ctx.closePath();
+                ctx.fill();
+                ctx.fillStyle = 'rgba(231, 76, 60, 0.24)';
+                ctx.beginPath();
+                ctx.moveTo(8, -width / 2 + 10);
+                ctx.lineTo(height - 8, -width / 2 + 6);
+                ctx.lineTo(height - 8, width / 2 - 6);
+                ctx.lineTo(8, width / 2 - 10);
+                ctx.closePath();
+                ctx.fill();
+                ctx.strokeStyle = 'rgba(255, 195, 80, 0.7)'; ctx.lineWidth = 1.2;
+                ctx.beginPath();
+                ctx.moveTo(6, -width / 2 + 6);
+                ctx.lineTo(height - 10, -width / 2 + 8);
+                ctx.moveTo(6, width / 2 - 6);
+                ctx.lineTo(height - 10, width / 2 - 8);
+                ctx.stroke();
                 ctx.restore();
             }
         });
@@ -1267,18 +2377,24 @@
         });
 
         if (!state.isWaveActive && state.waveDelay > 0) {
-            ctx.fillStyle = 'white'; ctx.font = 'bold 20px Arial'; ctx.textAlign = 'center';
+            ctx.fillStyle = 'white'; ctx.font = 'bold 22px "Segoe UI", Arial, sans-serif'; ctx.textAlign = 'center';
             ctx.fillText(`웨이브 ${state.wave} 준비 중`, canvas.width/2, canvas.height/2 - 10);
-            ctx.font = '13px Arial'; ctx.fillText(`${Math.ceil(state.waveDelay)}초 후 시작합니다`, canvas.width/2, canvas.height/2 + 15);
+            ctx.font = '14px "Segoe UI", Arial, sans-serif'; ctx.fillText(`${Math.ceil(state.waveDelay)}초 후 시작합니다`, canvas.width/2, canvas.height/2 + 18);
         }
     }
 
     function loop(time) {
-        let dt = (time - state.lastTime) / 1000; state.lastTime = time;
-        if (dt < 0.1) { update(dt); draw(); } requestAnimationFrame(loop);
+        let dt = (time - state.lastTime) / 1000;
+        if (state.isPaused) {
+            draw(); state.lastTime = time; requestAnimationFrame(loop); return;
+        }
+        state.lastTime = time;
+        if (dt < 0.1) { update(dt); draw(); }
+        requestAnimationFrame(loop);
     }
     
     if (!loadGame()) { generateWave(state.wave); } else { generateWave(state.wave); }
+    saveGame();
     requestAnimationFrame(loop);
 </script>
 </body>
