@@ -34,28 +34,34 @@
         }
         #top-ui {
             background: var(--panel-bg); color: var(--text-light); padding: 10px 15px;
-            display: flex; justify-content: space-between; align-items: center;
+            display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
             box-shadow: 0 4px 6px rgba(0,0,0,0.3); z-index: 10; flex-shrink: 0;
             position: relative;
         }
         .title-text {
             font-size: 20px; font-weight: 900; color: #f1c40f; 
             text-shadow: 2px 2px 0px #1a252f, -1px -1px 0px #1a252f;
-            position: absolute; left: 50%; transform: translateX(-50%);
+            position: static; justify-self: center; text-align: center;
             white-space: nowrap; letter-spacing: 1px;
+            max-width: 100%; overflow: hidden; text-overflow: ellipsis;
         }
         .stat-box { font-size: 14px; font-weight: bold; display: flex; align-items: center; gap: 4px; }
-        .wave-left { display: flex; align-items: center; gap: 6px; }
+        .wave-left { display: flex; align-items: center; gap: 6px; justify-self: start; }
         #btn-wave-info {
             border: none; background: #5dade2; color: white; border-radius: 999px;
             width: 20px; height: 20px; font-size: 11px; font-weight: bold; cursor: pointer; line-height: 20px;
             padding: 0;
         }
         #btn-wave-info:active { background: #3498db; }
+        #wave-select {
+            border: 1px solid rgba(0,0,0,0.18); border-radius: 6px; padding: 4px 6px; font-weight: bold;
+            font-size: 12px; color: #2c3e50; background: #fff; height: 28px;
+        }
         .money-text { color: var(--money-color); font-size: 15px; margin-right: 6px; }
         .btn-reset-top {
             background: #e74c3c; color: white; border: none; padding: 4px 6px;
             border-radius: 4px; font-weight: bold; font-size: 11px; cursor: pointer; transition: 0.2s;
+            justify-self: end;
         }
         .btn-reset-top:active { background: #c0392b; }
         canvas { flex: 1; width: 100%; height: 0; display: block; }
@@ -63,7 +69,7 @@
             background: #ecf0f1; box-shadow: 0 -4px 6px rgba(0,0,0,0.1);
             z-index: 10; display: flex; flex-direction: column; flex-shrink: 0;
             padding-bottom: env(safe-area-inset-bottom); position: relative;
-            max-height: 56vh; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain;
+            max-height: none; overflow: visible; overflow-x: hidden; overscroll-behavior: contain;
         }
         #normal-bottom { display: flex; flex-direction: column; width: 100%; }
         #tab-menu { display: flex; background: #bdc3c7; }
@@ -87,7 +93,7 @@
         #build-menu, .card { touch-action: pan-x; }
         #upgrade-menu, #angle-ui {
             display: none; flex-direction: column; gap: 8px; padding: 10px 12px;
-            flex: 1 1 auto; min-height: 0; overflow-y: auto; position: relative; z-index: 12;
+            flex: 0 0 auto; min-height: 0; overflow: visible; position: relative; z-index: 12;
             -webkit-overflow-scrolling: touch; touch-action: pan-y;
         }
         #upgrade-menu { background: #f8f9f9; }
@@ -104,6 +110,10 @@
             max-height: none;
             overflow: visible;
         }
+        #bottom-ui.detail-open #shop-header,
+        #bottom-ui.detail-open #normal-bottom {
+            display: none;
+        }
         #bottom-ui.detail-open #normal-bottom {
             display: none !important;
         }
@@ -118,8 +128,9 @@
         @media (max-width: 450px) {
             #game-wrapper { max-width: 100%; }
             #top-ui { padding: 8px 10px; }
-            .title-text { font-size: 18px; }
+            .title-text { font-size: 16px; }
             .stat-box, .money-text { font-size: 13px; }
+            #wave-select { font-size: 11px; height: 26px; padding: 3px 5px; }
             #shop-header { padding: 8px 10px; gap: 8px; }
             #shop-toggle-indicator { font-size: 12px; }
             .tab-btn { font-size: 12px; padding: 8px 0; }
@@ -242,6 +253,7 @@
         <div class="wave-left">
             <div class="stat-box">웨이브 <span id="wave-text">1</span></div>
             <button id="btn-wave-info" title="웨이브 정보">i</button>
+            <select id="wave-select" title="웨이브 선택"></select>
         </div>
         <div class="title-text">Defense BOB</div>
         <button class="btn-reset-top" onclick="triggerReset()">🔄</button>
@@ -321,7 +333,21 @@
         selectedTower: null, settingAngleMode: false, isDraggingAngle: false,
         isDraggingCard: false, dragCardType: null, dragX: 0, dragY: 0, dragClientY: 0,
         lastTime: performance.now(), autoRetryInterval: null, environmentProps: [],
-        pendingGelatin: null, isPaused: false
+        pendingGelatin: null, isPaused: false,
+        maxClearedWave: 1, viewZoom: 1, cameraX: null, cameraY: null
+    };
+
+    const MIN_VIEW_ZOOM = 1;
+    const MAX_VIEW_ZOOM = 1.9;
+    const PINCH_ZOOM_SENSITIVITY = 0.006;
+    const pinchState = {
+        active: false,
+        startDistance: 0,
+        startZoom: 1,
+        startCameraX: 0,
+        startCameraY: 0,
+        focusWorldX: 0,
+        focusWorldY: 0
     };
 
     const pauseReasons = new Set();
@@ -430,10 +456,85 @@
         return Math.round(Math.min(base * maxRatio, raw));
     }
 
+    function getViewCenter() {
+        if (state.cameraX === null || state.cameraY === null) {
+            return { x: canvas.width / 2, y: canvas.height / 2 };
+        }
+        return { x: state.cameraX, y: state.cameraY };
+    }
+
+    function toWorldPosition(clientX, clientY) {
+        const rect = canvas.getBoundingClientRect();
+        const screenX = (clientX - rect.left) * (canvas.width / rect.width);
+        const screenY = (clientY - rect.top) * (canvas.height / rect.height);
+        const focus = getViewCenter();
+        const zoom = Math.max(MIN_VIEW_ZOOM, state.viewZoom || MIN_VIEW_ZOOM);
+        return {
+            x: focus.x + (screenX - canvas.width / 2) / zoom,
+            y: focus.y + (screenY - canvas.height / 2) / zoom
+        };
+    }
+
+    function syncWaveSelect() {
+        const select = document.getElementById('wave-select');
+        if (!select) return;
+        const maxWave = Math.max(1, state.maxClearedWave || 1);
+        const currentValue = String(Math.min(Math.max(1, state.wave), maxWave));
+        if (select.options.length !== maxWave) {
+            select.innerHTML = '';
+            for (let wave = 1; wave <= maxWave; wave++) {
+                const option = document.createElement('option');
+                option.value = String(wave);
+                option.textContent = `${wave} 웨이브`;
+                select.appendChild(option);
+            }
+        }
+        if (select.value !== currentValue) select.value = currentValue;
+    }
+
+    function setViewZoom(nextZoom, focusScreenX = canvas.width / 2, focusScreenY = canvas.height / 2) {
+        const rect = canvas.getBoundingClientRect();
+        const screenX = (focusScreenX - rect.left) * (canvas.width / rect.width);
+        const screenY = (focusScreenY - rect.top) * (canvas.height / rect.height);
+        const previousZoom = Math.max(MIN_VIEW_ZOOM, state.viewZoom || MIN_VIEW_ZOOM);
+        const previousCenter = getViewCenter();
+        const worldX = previousCenter.x + (screenX - canvas.width / 2) / previousZoom;
+        const worldY = previousCenter.y + (screenY - canvas.height / 2) / previousZoom;
+        const clamped = Math.max(MIN_VIEW_ZOOM, Math.min(MAX_VIEW_ZOOM, nextZoom));
+        state.viewZoom = clamped;
+        state.cameraX = worldX - (screenX - canvas.width / 2) / clamped;
+        state.cameraY = worldY - (screenY - canvas.height / 2) / clamped;
+    }
+
+    function jumpToWave(targetWave) {
+        const waveNum = Math.max(1, Math.min(state.maxClearedWave || 1, targetWave));
+        if (state.autoRetryInterval) { clearInterval(state.autoRetryInterval); state.autoRetryInterval = null; }
+        state.wave = waveNum;
+        state.hp = 1;
+        state.enemies = [];
+        state.projectiles = [];
+        state.particles = [];
+        state.enemiesToSpawn = [];
+        state.spawnTimer = 0;
+        state.waveDelay = 0;
+        state.isWaveActive = false;
+        state.isGameOver = false;
+        state.pendingGelatin = null;
+        state.selectedTower = null;
+        closeUpgradeMenu();
+        document.getElementById('game-over-overlay').style.display = 'none';
+        generateWave(waveNum);
+        saveGame();
+    }
+
     function saveGame() {
         if (state.isGameOver) return;
         const saveData = {
             wave: state.wave, money: state.money,
+            maxClearedWave: state.maxClearedWave,
+            viewZoom: state.viewZoom,
+            cameraX: state.cameraX,
+            cameraY: state.cameraY,
             towers: state.towers.map(t => ({
                 x: t.x, y: t.y, type: t.type, level: t.level, totalCost: t.totalCost,
                 damage: t.damage, cooldownMax: t.cooldownMax, range: t.range, 
@@ -451,6 +552,10 @@
             try {
                 const data = JSON.parse(saved);
                 state.wave = data.wave; state.money = data.money;
+                state.maxClearedWave = Math.max(1, data.maxClearedWave || data.wave || 1);
+                state.viewZoom = Math.max(MIN_VIEW_ZOOM, Math.min(MAX_VIEW_ZOOM, data.viewZoom || 1));
+                state.cameraX = typeof data.cameraX === 'number' ? data.cameraX : 0;
+                state.cameraY = typeof data.cameraY === 'number' ? data.cameraY : 0;
                 state.towers = data.towers.map(t => ({
                     ...TOWER_DEFS[t.type], ...t,
                     cooldown: 0, laserCharge: 0, currentTarget: null, isFiring: false, searchDelay: 0,
@@ -482,6 +587,7 @@
                         }
                     }
                 }
+                syncWaveSelect();
                 return true;
             } catch (e) { console.error('Save loaded failed', e); }
         }
@@ -572,6 +678,11 @@
         canvas.height = newHeight;
         ctx.imageSmoothingEnabled = true;
 
+        if (state.cameraX === null || state.cameraY === null) {
+            state.cameraX = canvas.width / 2;
+            state.cameraY = canvas.height / 2;
+        }
+
         lastGameWidth = newGameWidth;
         lastGameHeight = newGameHeight;
         if (state.environmentProps.length === 0) initEnvironment();
@@ -588,6 +699,11 @@
         setTimeout(resizeCanvas, 5);
     };
 
+    const waveSelect = document.getElementById('wave-select');
+    if (waveSelect) {
+        waveSelect.addEventListener('change', () => jumpToWave(parseInt(waveSelect.value, 10) || 1));
+    }
+
     window.retryWave = function(goPrevious = false) {
         if (state.autoRetryInterval) { clearInterval(state.autoRetryInterval); state.autoRetryInterval = null; }
         if (goPrevious) state.wave = Math.max(1, state.wave - 1);
@@ -598,6 +714,8 @@
     };
 
     function generateWave(waveNum) {
+        state.maxClearedWave = Math.max(state.maxClearedWave || 1, waveNum);
+        syncWaveSelect();
         let spawnList = [];
         const hpMultiplier = Math.pow(1.25, waveNum - 1); 
         const speedMultiplier = 1 + (waveNum - 1) * 0.02; 
@@ -1368,12 +1486,12 @@
 
     function updateDragPos(e) {
         if (!state.isDraggingCard) return;
-        const rect = canvas.getBoundingClientRect();
         let clientX = e.clientX || (e.touches && e.touches[0].clientX);
         let clientY = e.clientY || (e.touches && e.touches[0].clientY);
         state.dragClientY = clientY;
-        state.dragX = (clientX - rect.left) * (canvas.width / rect.width);
-        state.dragY = (clientY - rect.top) * (canvas.height / rect.height);
+        const world = toWorldPosition(clientX, clientY);
+        state.dragX = world.x;
+        state.dragY = world.y;
     }
 
     window.addEventListener('mousemove', e => updateDragPos(e));
@@ -1493,9 +1611,9 @@
 
     const handleDown = (clientX, clientY) => {
         if (state.isGameOver || state.isDraggingCard) return;
-        const rect = canvas.getBoundingClientRect();
-        const tx = (clientX - rect.left) * (canvas.width / rect.width);
-        const ty = (clientY - rect.top) * (canvas.height / rect.height);
+        const world = toWorldPosition(clientX, clientY);
+        const tx = world.x;
+        const ty = world.y;
 
         if (state.settingAngleMode && state.selectedTower && state.selectedTower.type === 'log') {
             state.isDraggingAngle = true; 
@@ -1512,21 +1630,97 @@
 
     const handleMove = (clientX, clientY) => {
         if (state.settingAngleMode && state.isDraggingAngle && state.selectedTower) {
-            const rect = canvas.getBoundingClientRect();
-            const tx = (clientX - rect.left) * (canvas.width / rect.width);
-            const ty = (clientY - rect.top) * (canvas.height / rect.height);
+            const world = toWorldPosition(clientX, clientY);
+            const tx = world.x;
+            const ty = world.y;
             state.selectedTower.angle = Math.atan2(ty - state.selectedTower.y, tx - state.selectedTower.x);
         }
     };
 
     const handleUp = () => { if (state.settingAngleMode) state.isDraggingAngle = false; };
 
+    function getTouchDistanceAndMidpoint(touchA, touchB) {
+        const dx = touchA.clientX - touchB.clientX;
+        const dy = touchA.clientY - touchB.clientY;
+        return {
+            distance: Math.hypot(dx, dy),
+            midpointX: (touchA.clientX + touchB.clientX) / 2,
+            midpointY: (touchA.clientY + touchB.clientY) / 2
+        };
+    }
+
+    function startPinch(touchA, touchB) {
+        const rect = canvas.getBoundingClientRect();
+        const data = getTouchDistanceAndMidpoint(touchA, touchB);
+        const currentZoom = Math.max(MIN_VIEW_ZOOM, state.viewZoom || MIN_VIEW_ZOOM);
+        const center = getViewCenter();
+        const midScreenX = (data.midpointX - rect.left) * (canvas.width / rect.width);
+        const midScreenY = (data.midpointY - rect.top) * (canvas.height / rect.height);
+        pinchState.active = true;
+        pinchState.startDistance = data.distance || 1;
+        pinchState.startZoom = currentZoom;
+        pinchState.startCameraX = center.x;
+        pinchState.startCameraY = center.y;
+        pinchState.focusWorldX = center.x + (midScreenX - canvas.width / 2) / currentZoom;
+        pinchState.focusWorldY = center.y + (midScreenY - canvas.height / 2) / currentZoom;
+    }
+
+    function updatePinch(touchA, touchB) {
+        if (!pinchState.active) return;
+        const rect = canvas.getBoundingClientRect();
+        const data = getTouchDistanceAndMidpoint(touchA, touchB);
+        const midScreenX = (data.midpointX - rect.left) * (canvas.width / rect.width);
+        const midScreenY = (data.midpointY - rect.top) * (canvas.height / rect.height);
+        const zoomRatio = data.distance / Math.max(1, pinchState.startDistance);
+        const nextZoom = Math.max(MIN_VIEW_ZOOM, Math.min(MAX_VIEW_ZOOM, pinchState.startZoom * zoomRatio));
+        state.viewZoom = nextZoom;
+        state.cameraX = pinchState.focusWorldX - (midScreenX - canvas.width / 2) / nextZoom;
+        state.cameraY = pinchState.focusWorldY - (midScreenY - canvas.height / 2) / nextZoom;
+    }
+
+    function endPinch() {
+        if (pinchState.active) {
+            pinchState.active = false;
+            saveGame();
+        }
+    }
+
     canvas.addEventListener('mousedown', e => handleDown(e.clientX, e.clientY));
     canvas.addEventListener('mousemove', e => handleMove(e.clientX, e.clientY));
     window.addEventListener('mouseup', handleUp);
-    canvas.addEventListener('touchstart', e => { if(e.touches[0].clientY < canvas.getBoundingClientRect().bottom) { e.preventDefault(); handleDown(e.touches[0].clientX, e.touches[0].clientY); } }, { passive: false });
-    canvas.addEventListener('touchmove', e => { if(e.touches[0].clientY < canvas.getBoundingClientRect().bottom) { e.preventDefault(); handleMove(e.touches[0].clientX, e.touches[0].clientY); } }, { passive: false });
-    window.addEventListener('touchend', e => handleUp());
+    canvas.addEventListener('touchstart', e => {
+        const rect = canvas.getBoundingClientRect();
+        if (e.touches.length >= 2) {
+            e.preventDefault();
+            startPinch(e.touches[0], e.touches[1]);
+            return;
+        }
+        if (e.touches[0].clientY < rect.bottom) {
+            e.preventDefault();
+            handleDown(e.touches[0].clientX, e.touches[0].clientY);
+        }
+    }, { passive: false });
+    canvas.addEventListener('touchmove', e => {
+        const rect = canvas.getBoundingClientRect();
+        if (e.touches.length >= 2) {
+            e.preventDefault();
+            updatePinch(e.touches[0], e.touches[1]);
+            return;
+        }
+        if (pinchState.active) return;
+        if (e.touches[0] && e.touches[0].clientY < rect.bottom) {
+            e.preventDefault();
+            handleMove(e.touches[0].clientX, e.touches[0].clientY);
+        }
+    }, { passive: false });
+    canvas.addEventListener('touchend', e => {
+        handleUp();
+        if (e.touches.length < 2) endPinch();
+    });
+    canvas.addEventListener('touchcancel', () => {
+        handleUp();
+        endPinch();
+    });
 
     function openUpgradeMenu(tower) {
         state.selectedTower = tower;
@@ -2197,6 +2391,14 @@
 
     function draw() {
         ctx.fillStyle = '#27ae60'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        const zoom = Math.max(MIN_VIEW_ZOOM, state.viewZoom || MIN_VIEW_ZOOM);
+        const focus = getViewFocus();
+
+        ctx.save();
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.scale(zoom, zoom);
+        ctx.translate(-focus.x, -focus.y);
+
         const checkPathX = canvas.width / 2;
 
         if (state.environmentProps) {
@@ -2432,6 +2634,8 @@
             ctx.restore();
         });
 
+        ctx.restore();
+
         if (!state.isWaveActive && state.waveDelay > 0) {
             ctx.fillStyle = 'white'; ctx.font = 'bold 22px "Segoe UI", Arial, sans-serif'; ctx.textAlign = 'center';
             ctx.fillText(`웨이브 ${state.wave} 준비 중`, canvas.width/2, canvas.height/2 - 10);
@@ -2450,6 +2654,7 @@
     }
     
     if (!loadGame()) { generateWave(state.wave); } else { generateWave(state.wave); }
+    syncWaveSelect();
     saveGame();
     requestAnimationFrame(loop);
 </script>
