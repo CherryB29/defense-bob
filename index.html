@@ -815,6 +815,8 @@
             hp: def.maxHp * hpMult,
             maxHp: def.maxHp * hpMult,
             speed: def.speed * speedMult,
+            hpMult,
+            speedMult,
             isWet: false, wetTimer: 0, wetSlow: 1.0,
             kbVelocity: 0, stunTimer: 0, type,
             oilTimer: 0, oilSlow: 1.0,
@@ -2249,8 +2251,15 @@
 
             if (e.hp <= 0) {
                 if (e.type === 'grape') {
+                    const smallDef = ENEMY_DEFS.grape_small;
+                    const parentDef = ENEMY_DEFS.grape;
+                    const parentSpeedMult = (typeof e.speedMult === 'number' && e.speedMult > 0)
+                        ? e.speedMult
+                        : Math.max(0.1, (e.speed || parentDef.speed) / parentDef.speed);
+                    const childHpMult = Math.max(0.1, (e.maxHp * 0.8) / smallDef.maxHp);
+                    const childSpeedMult = parentSpeedMult * 1.12;
                     for (let n = 0; n < 2; n++) {
-                        state.enemies.push(createEnemyEntity('grape_small', 0.85, 1.05, e.x + (n === 0 ? -10 : 10), e.y + (n === 0 ? -4 : 4)));
+                        state.enemies.push(createEnemyEntity('grape_small', childHpMult, childSpeedMult, e.x + (n === 0 ? -10 : 10), e.y + (n === 0 ? -4 : 4)));
                     }
                     createParticle('text', e.x, e.y, { text: '🍇 분열!', color: '#9b59b6' });
                 }
