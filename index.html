@@ -222,6 +222,7 @@
             font-size: 11px; color: #7f8c8d; width: 95%; background: #f8f9f9;
             border: 1px solid #d5dbdb; border-radius: 4px; padding: 6px; margin: 2px 0 6px 0; line-height: 1.4; text-align: left;
         }
+        #upgrade-money { font-size: 12px; color: #f1c40f; font-weight: 800; margin: 2px 0 4px; }
         .stat-row { display: flex; justify-content: space-between; margin-bottom: 2px; }
         .stat-up { color: #27ae60; font-weight: bold; }
     </style>
@@ -298,6 +299,7 @@
                 <div class="card" data-category="damage" data-type="shotgun">압력솥<div class="card-cost">💰 80</div></div>
                 <div class="card" data-category="damage" data-type="mortar">코코넛<br>발사기<div class="card-cost">💰 130</div></div>
                 <div class="card" data-category="damage" data-type="tesla">전기 구이<div class="card-cost">💰 180</div></div>
+                <div class="card" data-category="damage" data-type="chopper">중식도<div class="card-cost">💰 165</div></div>
                 <div class="card" data-category="damage" data-type="pyro">토치<div class="card-cost">💰 220</div></div>
                 <div class="card" data-category="damage" data-type="crossbow">이쑤시개<br>발사기<div class="card-cost">💰 250</div></div>
                 <div class="card" data-category="damage" data-type="fryer">튀김기<div class="card-cost">💰 300</div></div>
@@ -305,6 +307,7 @@
                 <div class="card" data-category="utility" data-type="sprinkler" style="display:none;">정수기<div class="card-cost">💰 50</div></div>
                 <div class="card" data-category="utility" data-type="log" style="display:none;">밀대<div class="card-cost">💰 150</div></div>
                 <div class="card" data-category="utility" data-type="amplifier" style="display:none;">증폭기<div class="card-cost">💰 100</div></div>
+                <div class="card" data-category="utility" data-type="lemon" style="display:none;">레몬즙<br>발사기<div class="card-cost">💰 200</div></div>
                 <div class="card" data-category="utility" data-type="gelatin" style="display:none;">젤라틴<div class="card-cost" id="gelatin-cost-text">💰 320</div></div>
 
                 <div class="card" data-category="resource" data-type="mine" style="display:none;">돼지<br>저금통<div class="card-cost">💰 60</div></div>
@@ -313,9 +316,11 @@
 
         <div id="upgrade-menu" style="display:none;">
             <div id="upgrade-info" style="font-weight: bold; color: #2c3e50; font-size:13px;">방어탑 정보</div>
+            <div id="upgrade-money"></div>
             <div id="upgrade-details"></div>
             <button class="action-btn btn-upgrade" id="btn-do-upgrade">업그레이드 (💰 ?)</button>
             <button class="action-btn btn-action" id="btn-set-angle" style="display:none; margin-bottom:4px;">🪵 발사 방향 재설정</button>
+            <button class="action-btn btn-action" id="btn-flip-spin" style="display:none; margin-bottom:4px;">🔁 회전 방향 반전</button>
             <button class="action-btn btn-sell" id="btn-sell-tower" style="margin-bottom:4px;">🔨 방어탑 판매 (💰 ?)</button>
             <button class="action-btn btn-cancel" id="btn-cancel-upgrade">취소</button>
         </div>
@@ -344,7 +349,7 @@
         pendingGelatin: null, isPaused: false,
         maxClearedWave: 1
     };
-    const VIEW_SCALE = 1.4;
+    const VIEW_SCALE = 1.6;
 
     const pauseReasons = new Set();
     function setPause(reason, shouldPause) {
@@ -358,25 +363,27 @@
         cannon:    { name: '완두콩 발사대', cost: 40, radius: 15, color: '#2ecc71', range: 110, cooldownMax: 1.2, damage: 20, upCost: 40 }, 
         shotgun:   { name: '압력솥', cost: 80, radius: 14, color: '#bdc3c7', range: 55, cooldownMax: 1.0, damage: 35, upCost: 70 },
         mortar:    { name: '코코넛 발사기', cost: 130, radius: 16, color: '#8d6e63', range: 180, cooldownMax: 2.5, damage: 25, upCost: 110 },
+        lemon:     { name: '레몬즙 발사기', cost: 200, radius: 21, color: '#f7dc6f', range: 180, cooldownMax: 6.0, damage: 0, upCost: 150, ampPercent: 20, puddleDuration: 4.0, puddleRadius: 54, stunAfter: 3.0, stunDuration: 1.0, minCooldown: 4.0 },
         sprinkler: { name: '정수기', cost: 50, radius: 14, color: '#ecf0f1', range: 90, cooldownMax: 1.5, damage: 0, upCost: 45 },
         tesla:     { name: '전기 구이', cost: 180, radius: 14, color: '#95a5a6', range: 120, cooldownMax: 1.6, damage: 17.5, upCost: 150, stunDuration: 0.5 },
+        chopper:   { name: '중식도', cost: 165, radius: 15, color: '#dfe6e9', range: 54, cooldownMax: 0, damage: 24, upCost: 130, orbitRadius: 38, spinSpeed: 3.2, bladeReach: 16, rotationDir: 1 },
         log:       { name: '밀대', cost: 150, radius: 16, color: '#e1b12c', range: 0, cooldownMax: 6.5, damage: 0, upCost: 80, angle: -Math.PI / 2 },
-        pyro:      { name: '토치', cost: 220, radius: 15, color: '#3498db', range: 80, cooldownMax: 0.1, damage: 0.54, upCost: 180 },
+        pyro:      { name: '토치', cost: 220, radius: 15, color: '#3498db', range: 80, cooldownMax: 0.1, damage: 0.27, maxDamage: 26.35, upCost: 180 },
         crossbow:  { name: '이쑤시개 발사기', cost: 250, radius: 13, color: '#d1ccc0', range: 240, cooldownMax: 0.2, damage: 6, upCost: 200 },
         amplifier: { name: '증폭기', cost: 100, radius: 14, color: '#f39c12', range: 80, cooldownMax: 0, damage: 0, upCost: 90 },
-        fryer:     { name: '튀김기', cost: 300, radius: 15, color: '#f39c12', range: 0, cooldownMax: 6.5, damage: 300, upCost: 200 },
+        fryer:     { name: '튀김기', cost: 300, radius: 15, color: '#f39c12', range: 0, attackWidth: 140, attackLength: 240, cooldownMax: 6.5, damage: 300, upCost: 200 },
         gelatin:   { name: '젤라틴', cost: 320, radius: 14, color: '#9b59b6', range: 0, cooldownMax: 0, damage: 0, upCost: 150 }
     };
 
     const ENEMY_DEFS = {
         goblin:  { name: '병아리', speed: 55, maxHp: 24, radius: 12, emoji: '🐥', reward: 6 },
         wolf:    { name: '라멘', speed: 95, maxHp: 15, radius: 10, emoji: '🍜', reward: 5 },
-        golem:   { name: '햄버거', speed: 28, maxHp: 380, radius: 20, emoji: '🍔', reward: 28 },
+        golem:   { name: '햄버거', speed: 28, maxHp: 380, radius: 16, emoji: '🍔', reward: 28 },
         scout:   { name: '사탕', speed: 125, maxHp: 13, radius: 9, emoji: '🍬', reward: 4 },
         shield:  { name: '식빵', speed: 35, maxHp: 190, radius: 14, emoji: '🍞', reward: 15 },
         healer:  { name: '커피', speed: 42, maxHp: 85, radius: 13, emoji: '🥤', reward: 20 },
-        grape:   { name: '포도', speed: 24, maxHp: 200, radius: 14, emoji: '🍇', reward: 10 },
-        grape_small: { name: '작은 포도', speed: 30, maxHp: 150, radius: 9, emoji: '🍇', reward: 4 },
+        grape:   { name: '포도', speed: 24, maxHp: 42, radius: 14, emoji: '🍇', reward: 10 },
+        grape_small: { name: '작은 포도', speed: 30, maxHp: 16, radius: 9, emoji: '🍇', reward: 4 },
         milk:    { name: '우유', speed: 32, maxHp: 72, radius: 13, emoji: '🥛', reward: 14, auraRange: 58 },
         fries:   { name: '감자튀김', speed: 30, maxHp: 24, radius: 12, emoji: '🍟', reward: 12, shieldRange: 70, shieldInterval: 5.0 }
     };
@@ -400,7 +407,15 @@
         },
         pyro: {
             desc: '근거리 지속 화염으로 한 대상을 빠르게 태우는 타워입니다.',
-            stats: ['사거리 80', '지속 피해', '짧은 공격 주기']
+            stats: ['사거리 80', '최소 피해 0.27 / 최대 피해 26.35', '짧은 공격 주기']
+        },
+        chopper: {
+            desc: '타워 주변을 회전하는 중식도로 가까이 오는 적을 베는 근접 타워입니다. 적을 맞히면 5초간 치유량을 50% 감소시킵니다.',
+            stats: ['회전 반지름 38', '피해 24', '회전 속도 3.2', '치유 감소 50% / 5초']
+        },
+        lemon: {
+            desc: '포물선으로 레몬즙을 쏴 장판을 생성하는 보조 타워입니다. 장판 위 적은 보호막이 즉시 제거되고 더 큰 피해를 받습니다.',
+            stats: ['사거리 180', '공격 간격 6.0초 (최대 공속 4.0초)', '피해 증가 20% (레벨당 +5%, 최대 40%)', '장판 4초 / 3초 체류 시 1초 기절']
         },
         crossbow: {
             desc: '긴 사거리에서 빠르게 단일 대상을 저격하는 타워입니다.',
@@ -408,7 +423,7 @@
         },
         fryer: {
             desc: '전방에 기름 장판을 깔아 범위 지속 피해와 둔화를 부여합니다.',
-            stats: ['전방 장판', '지속 피해', '이동 둔화']
+            stats: ['전방 장판', '끓는 기름 효과']
         },
         sprinkler: {
             desc: '범위 내 적을 젖은 상태로 만들고 이동을 늦춥니다.',
@@ -436,10 +451,13 @@
         return Math.round(baseCost * Math.pow(1.18, level - 1));
     }
 
-    // Level-up growth: +15% of base stat per level, with existing cap ratios respected.
     function getUpgradeValue(base, level, maxRatio = 10) {
-        const raw = base * (1 + 0.15 * (level - 1));
-        return Math.min(base * maxRatio, raw);
+        let value = base;
+        for (let currentLevel = 2; currentLevel <= level; currentLevel++) {
+            const stepRatio = currentLevel <= 10 ? 0.15 : currentLevel <= 15 ? 0.20 : 0.25;
+            value += base * stepRatio;
+        }
+        return value;
     }
 
     function getCooldownValue(base, level, minRatio = 0.45) {
@@ -449,6 +467,18 @@
 
     function getRangeValue(base, level, maxRatio = 2.2) {
         return Math.round(base * (1 + 0.15 * (level - 1)));
+    }
+
+    function getLemonAmpValue(baseAmp, level) {
+        return Math.min(40, (baseAmp || 20) + (level - 1) * 5);
+    }
+
+    function getLemonPuddleRadius(baseRadius, level) {
+        return Math.round((baseRadius || 54) * (1 + 0.12 * (level - 1)));
+    }
+
+    function getFryerAttackAngle(x) {
+        return x < canvas.width / 2 ? 0 : Math.PI;
     }
 
     function toWorldPosition(clientX, clientY) {
@@ -508,8 +538,12 @@
             maxClearedWave: state.maxClearedWave,
             towers: state.towers.map(t => ({
                 x: t.x, y: t.y, type: t.type, level: t.level, totalCost: t.totalCost,
-                damage: t.damage, cooldownMax: t.cooldownMax, range: t.range, 
+                damage: t.damage, maxDamage: t.maxDamage, cooldownMax: t.cooldownMax, range: t.range, 
                 angle: t.angle, prod: t.prod, stunDuration: t.stunDuration,
+                orbitRadius: t.orbitRadius, spinSpeed: t.spinSpeed, bladeReach: t.bladeReach, bladeAngle: t.bladeAngle,
+                ampPercent: t.ampPercent,
+                puddleRadius: t.puddleRadius,
+                rotationDir: t.rotationDir,
                 isCompleted: t.isCompleted 
             }))
         };
@@ -527,9 +561,42 @@
                 state.towers = data.towers.map(t => ({
                     ...TOWER_DEFS[t.type], ...t,
                     cooldown: 0, laserCharge: 0, currentTarget: null, isFiring: false, searchDelay: 0,
+                    angle: (typeof t.angle === 'number') ? t.angle : (TOWER_DEFS[t.type].angle || -Math.PI / 2),
+                    targetAngle: (typeof t.currentAngle === 'number')
+                        ? t.currentAngle
+                        : ((typeof t.angle === 'number') ? t.angle : (TOWER_DEFS[t.type].angle || -Math.PI / 2)),
+                    currentAngle: (typeof t.currentAngle === 'number')
+                        ? t.currentAngle
+                        : ((typeof t.angle === 'number') ? t.angle : (TOWER_DEFS[t.type].angle || -Math.PI / 2)),
                     partner: null, collisions: 0, inactiveTimer: 0,
-                    baseDamage: TOWER_DEFS[t.type].damage, baseCooldownMax: TOWER_DEFS[t.type].cooldownMax, baseRange: TOWER_DEFS[t.type].range, baseProd: TOWER_DEFS[t.type].prod
+                    baseDamage: TOWER_DEFS[t.type].damage, baseMaxDamage: TOWER_DEFS[t.type].maxDamage, baseCooldownMax: TOWER_DEFS[t.type].cooldownMax, baseRange: TOWER_DEFS[t.type].range, baseProd: TOWER_DEFS[t.type].prod,
+                    baseAmpPercent: TOWER_DEFS[t.type].ampPercent,
+                    baseOrbitRadius: TOWER_DEFS[t.type].orbitRadius, baseSpinSpeed: TOWER_DEFS[t.type].spinSpeed, bladeReach: TOWER_DEFS[t.type].bladeReach,
+                    rotationDir: TOWER_DEFS[t.type].rotationDir,
+                    hitMemory: new Map()
                 }));
+
+                state.towers.forEach(tower => {
+                    if (tower.type === 'pyro' && typeof tower.maxDamage !== 'number') {
+                        tower.damage = getUpgradeValue(TOWER_DEFS.pyro.damage, tower.level || 1);
+                        tower.maxDamage = getUpgradeValue(TOWER_DEFS.pyro.maxDamage, tower.level || 1);
+                    }
+                    if (tower.type === 'chopper') {
+                        tower.orbitRadius = tower.orbitRadius || tower.baseOrbitRadius || getUpgradeValue(TOWER_DEFS.chopper.orbitRadius, tower.level || 1);
+                        tower.spinSpeed = tower.spinSpeed || tower.baseSpinSpeed || getUpgradeValue(TOWER_DEFS.chopper.spinSpeed, tower.level || 1);
+                        if ((tower.level || 1) === 1 && tower.spinSpeed > TOWER_DEFS.chopper.spinSpeed * 1.05) {
+                            tower.spinSpeed = TOWER_DEFS.chopper.spinSpeed;
+                        }
+                        tower.bladeReach = tower.bladeReach || TOWER_DEFS.chopper.bladeReach;
+                        tower.range = tower.range || Math.round(tower.orbitRadius + (tower.bladeReach || 16));
+                    }
+                    if (tower.type === 'lemon') {
+                        const lv = tower.level || 1;
+                        tower.ampPercent = getLemonAmpValue(tower.baseAmpPercent || TOWER_DEFS.lemon.ampPercent, lv);
+                        tower.cooldownMax = Math.max(TOWER_DEFS.lemon.minCooldown || 4.0, tower.cooldownMax || getCooldownValue(TOWER_DEFS.lemon.cooldownMax, lv));
+                        tower.puddleRadius = tower.puddleRadius || getLemonPuddleRadius(TOWER_DEFS.lemon.puddleRadius, lv);
+                    }
+                });
 
                 const gelatins = state.towers.filter(t => t.type === 'gelatin' && t.isCompleted);
                 for (let i = 0; i < gelatins.length; i += 2) {
@@ -548,9 +615,12 @@
                         if (minutes > 0.1) { 
                             const cappedMinutes = Math.min(minutes, 24 * 60);
                             const offlineReward = Math.round(state.wave * 50 * cappedMinutes / 30);
-                            if (offlineReward > 0) {
-                                state.money += offlineReward;
-                                showOfflineRewardPopup(cappedMinutes, offlineReward);
+                            const piggyLevelSum = state.towers.reduce((sum, tower) => sum + (tower.type === 'mine' ? (tower.level || 1) : 0), 0);
+                            const piggyBonus = Math.round(piggyLevelSum * 10 * cappedMinutes);
+                            const totalOfflineReward = offlineReward + piggyBonus;
+                            if (totalOfflineReward > 0) {
+                                state.money += totalOfflineReward;
+                                showOfflineRewardPopup(cappedMinutes, offlineReward, piggyBonus);
                             }
                         }
                     }
@@ -562,10 +632,16 @@
         return false;
     }
 
-    function showOfflineRewardPopup(minutes, reward) {
+    function showOfflineRewardPopup(minutes, reward, piggyBonus = 0) {
         const overlay = document.getElementById('offline-reward-overlay');
         const text = document.getElementById('offline-reward-text');
-        text.textContent = `방치 시간: ${minutes.toFixed(1)}분\n획득 골드: 💰 ${reward}`;
+        const totalReward = reward + piggyBonus;
+        const totalSeconds = Math.max(0, Math.floor(minutes * 60));
+        const hours = Math.floor(totalSeconds / 3600);
+        const mins = Math.floor((totalSeconds % 3600) / 60);
+        const secs = totalSeconds % 60;
+        const timeLabel = `${hours}시간 ${mins}분 ${secs}초`;
+        text.innerHTML = `방치 시간: ${timeLabel}<br>기본 보상: 💰 ${reward}<br><span style="color:#ff7eb6; font-weight:800;">돼지 저금통 보너스! 💰 ${piggyBonus}</span><br>획득 골드 합계: 💰 ${totalReward}`;
         overlay.style.display = 'flex';
     }
 
@@ -680,7 +756,7 @@
         state.maxClearedWave = Math.max(state.maxClearedWave || 1, waveNum);
         syncWaveSelect();
         let spawnList = [];
-        const hpMultiplier = Math.pow(1.25, waveNum - 1); 
+        const hpMultiplier = Math.pow(1.15, waveNum - 1); 
         const speedMultiplier = 1 + (waveNum - 1) * 0.02; 
         const densityMultiplier = waveNum >= 20 ? 1 + (waveNum - 19) * 0.75 : 1;
         const addSpawn = (type, count, speedMult = speedMultiplier) => {
@@ -740,13 +816,15 @@
             kbVelocity: 0, stunTimer: 0, type,
             oilTimer: 0, oilSlow: 1.0,
             shieldHp: 0, shieldTimer: 0,
+            healReductionTimer: 0, healReductionMult: 1.0,
+            lemonAmpTimer: 0, lemonAmpPercent: 0,
             statusImmune: false, slowImmune: false
         };
     }
 
     function getWaveInfoLines(waveNum) {
         const lines = [];
-        const hpMultiplier = Math.pow(1.25, waveNum - 1);
+        const hpMultiplier = Math.pow(1.15, waveNum - 1);
         const speedMultiplier = 1 + (waveNum - 1) * 0.02;
 
         const goblinCount = 5 + Math.floor(waveNum * 1.5);
@@ -814,6 +892,8 @@
         e.wetTimer = 0;
         e.wetSlow = 1.0;
         e.oilTimer = 0;
+        e.lemonAmpTimer = 0;
+        e.lemonAmpPercent = 0;
         e.stunTimer = 0;
         e.kbVelocity = 0;
         e.lastGelatinBounce = 0;
@@ -836,6 +916,8 @@
         if (type === 'pyro') towerX = laneX - 42;
         if (type === 'crossbow') towerX = laneX - 72;
         if (type === 'fryer') towerX = laneX - 36;
+        if (type === 'chopper') towerX = laneX - 48;
+        if (type === 'lemon') towerX = laneX - 56;
         if (type === 'log') towerX = laneX;
 
         const tower = {
@@ -855,9 +937,18 @@
             targetAngle: type === 'log' ? -Math.PI / 2 : (def.angle || -Math.PI / 2),
             currentAngle: type === 'log' ? -Math.PI / 2 : (def.angle || -Math.PI / 2),
             baseDamage: def.damage,
+            baseMaxDamage: def.maxDamage,
             baseCooldownMax: def.cooldownMax,
             baseRange: def.range,
             baseProd: def.prod,
+            baseAmpPercent: def.ampPercent,
+            baseOrbitRadius: def.orbitRadius,
+            baseSpinSpeed: def.spinSpeed,
+            orbitRadius: def.orbitRadius,
+            spinSpeed: def.spinSpeed,
+            bladeReach: def.bladeReach,
+            ampPercent: def.ampPercent,
+            bladeAngle: 0,
             stunDuration: def.stunDuration || 0.5,
             totalCost: def.cost,
             isCompleted: type !== 'gelatin',
@@ -881,6 +972,8 @@
             kbVelocity: 0,
             stunTimer: 0,
             oilTimer: 0,
+            lemonAmpTimer: 0,
+            lemonAmpPercent: 0,
             lastGelatinBounce: 0
         };
 
@@ -938,6 +1031,8 @@
                 partner: null
             };
             sandbox.towers = [tower, cannon];
+        } else if (type === 'chopper') {
+            tower.range = tower.orbitRadius + (tower.bladeReach || 16);
         }
 
         return sandbox;
@@ -958,6 +1053,7 @@
 
         if (e.isWet) { e.wetTimer -= dt; if (e.wetTimer <= 0) { e.isWet = false; e.wetSlow = 1.0; } }
         if (e.oilTimer > 0) e.oilTimer -= dt;
+        if (e.lemonAmpTimer > 0) { e.lemonAmpTimer -= dt; if (e.lemonAmpTimer <= 0) e.lemonAmpPercent = 0; }
 
         if (e.stunTimer > 0) {
             e.stunTimer -= dt;
@@ -994,6 +1090,20 @@
                     const arc = Math.sin(p.progress * Math.PI) * 24;
                     p.y = p.startY + (p.ty - p.startY) * p.progress - arc;
                 }
+            } else if (p.type === 'lemon_shell') {
+                p.progress += p.speed * dt;
+                if (p.progress >= 1) {
+                    sandbox.projectiles.push({
+                        type: 'lemon_puddle', x: p.tx, y: p.ty, radius: p.radius || 54, life: p.puddleDuration || 4.0,
+                        ampPercent: p.ampPercent || TOWER_DEFS.lemon.ampPercent, stunAfter: p.stunAfter || 3.0, stunDuration: p.stunDuration || 1.0,
+                        dwellMap: new Map(), stunnedSet: new Set()
+                    });
+                    sandbox.projectiles.splice(i, 1);
+                } else {
+                    p.x = p.startX + (p.tx - p.startX) * p.progress;
+                    const arc = Math.sin(p.progress * Math.PI) * 28;
+                    p.y = p.startY + (p.ty - p.startY) * p.progress - arc;
+                }
             } else if (p.type === 'log_obj') {
                 let moveStep = p.speed * dt; p.distance += moveStep;
                 if (p.distance > p.maxDistance) { sandbox.projectiles.splice(i, 1); continue; }
@@ -1014,6 +1124,24 @@
                     tooltipApplyDamage(e, p.damage * 0.2 * dt);
                     e.oilTimer = 1.4;
                 }
+            } else if (p.type === 'lemon_puddle') {
+                p.life -= dt;
+                if (p.life <= 0) { sandbox.projectiles.splice(i, 1); continue; }
+                const inside = Math.hypot(e.x - p.x, e.y - p.y) <= (p.radius || 54) + e.radius * 0.2;
+                if (inside) {
+                    e.shieldHp = 0;
+                    e.shieldTimer = 0;
+                    e.lemonAmpTimer = Math.max(e.lemonAmpTimer || 0, 1.0);
+                    e.lemonAmpPercent = Math.max(e.lemonAmpPercent || 0, p.ampPercent || TOWER_DEFS.lemon.ampPercent);
+                    const dwell = (p.dwellMap.get(e) || 0) + dt;
+                    p.dwellMap.set(e, dwell);
+                    if (dwell >= (p.stunAfter || 3.0) && !p.stunnedSet.has(e)) {
+                        applyStun(e, p.stunDuration || 1.0);
+                        p.stunnedSet.add(e);
+                    }
+                } else {
+                    p.dwellMap.delete(e);
+                }
             }
         }
 
@@ -1025,7 +1153,32 @@
                 }
             });
             t.speedMult = speedMult;
-            t.cooldown -= dt * speedMult;
+            const effectiveSpeedMult = (t.type === 'lemon')
+                ? Math.min(speedMult, (t.cooldownMax || 6.0) / (t.minCooldown || 4.0))
+                : speedMult;
+            t.cooldown -= dt * effectiveSpeedMult;
+
+            if (t.type === 'chopper') {
+                const orbitRadius = t.orbitRadius || 38;
+                const spinSpeed = t.spinSpeed || 3.2;
+                const bladeReach = t.bladeReach || 16;
+                const rotationDir = t.rotationDir || 1;
+                t.bladeAngle = (t.bladeAngle || 0) + dt * spinSpeed * speedMult * rotationDir;
+                const bladeX = t.x + Math.cos(t.bladeAngle) * orbitRadius;
+                const bladeY = t.y + Math.sin(t.bladeAngle) * orbitRadius;
+                if (!t.hitMemory) t.hitMemory = new Map();
+                const inContact = Math.hypot(e.x - bladeX, e.y - bladeY) <= e.radius + bladeReach;
+                const wasInContact = t.hitMemory.get(e) === true;
+                if (inContact && !wasInContact) {
+                    tooltipApplyDamage(e, t.damage);
+                    e.healReductionTimer = 5.0;
+                    e.healReductionMult = 0.5;
+                    t.hitMemory.set(e, true);
+                } else if (!inContact && wasInContact) {
+                    t.hitMemory.delete(e);
+                }
+                return;
+            }
 
             if (t.type === 'gelatin') {
                 if (t.isCompleted && t.partner && t.x < t.partner.x) {
@@ -1043,10 +1196,40 @@
             if (t.type === 'fryer') {
                 if (t.cooldown <= 0) {
                     t.cooldown = t.cooldownMax;
-                    let angle = e.x >= t.x ? 0 : Math.PI;
-                    sandbox.projectiles.push({ type: 'oil_patch', x: t.x, y: t.y, angle, damage: t.damage * 0.7, width: 40, length: 120, hitWidth: 26, hitList: [], life: 1.8, fadeDuration: 0.45, appearDuration: 0.7, age: 0, ripple: 0, flow: 0 });
+                    let angle = getFryerAttackAngle(t.x);
+                    sandbox.projectiles.push({ type: 'oil_patch', x: t.x, y: t.y, angle, damage: t.damage * 0.7, width: 140, length: 240, hitWidth: 70, hitList: [], life: 1.8, fadeDuration: 0.45, appearDuration: 0.7, age: 0, ripple: 0, flow: 0 });
                 }
                 return;
+            }
+
+            if (t.type === 'lemon' && t.cooldown <= 0) {
+                let target = null;
+                if (Math.hypot(t.x - e.x, t.y - e.y) <= t.range) target = e;
+                if (target) {
+                    t.cooldown = t.cooldownMax;
+                    const dist = Math.hypot(target.x - t.x, target.y - t.y);
+                    const duration = Math.max(0.6, dist / 150);
+                    sandbox.projectiles.push({
+                        type: 'lemon_shell', x: t.x, y: t.y, startX: t.x, startY: t.y, tx: target.x, ty: target.y,
+                        progress: 0, speed: 1 / duration, radius: t.puddleRadius || 54, puddleDuration: t.puddleDuration || 4.0,
+                        ampPercent: t.ampPercent || TOWER_DEFS.lemon.ampPercent, stunAfter: t.stunAfter || 3.0, stunDuration: t.stunDuration || 1.0
+                    });
+                }
+                return;
+
+                if (t.type === 'lemon') {
+                    const target = sandbox.enemies.find(enemy => Math.hypot(t.x - enemy.x, t.y - enemy.y) <= t.range);
+                    if (target) {
+                        t.targetAngle = Math.atan2(target.y - t.y, target.x - t.x);
+                    }
+                    if (t.currentAngle !== undefined) {
+                        let diff = t.targetAngle - t.currentAngle;
+                        while (diff < -Math.PI) diff += Math.PI * 2;
+                        while (diff > Math.PI) diff -= Math.PI * 2;
+                        t.currentAngle += diff * dt * 8;
+                    }
+                    return;
+                }
             }
 
             if (t.type === 'pyro') {
@@ -1061,7 +1244,10 @@
                     t.beamTx = e.x; t.beamTy = e.y;
                     t.targetAngle = Math.atan2(e.y - t.y, e.x - t.x);
                     if (t.cooldown <= 0) {
-                        tooltipApplyDamage(e, t.damage + Math.floor(t.laserCharge));
+                        const chargeRatio = Math.max(0, Math.min(1, (t.laserCharge || 0) / 10));
+                        const minDamage = t.damage;
+                        const maxDamage = t.maxDamage || t.baseMaxDamage || t.damage;
+                        tooltipApplyDamage(e, minDamage + (maxDamage - minDamage) * chargeRatio);
                         t.cooldown = t.cooldownMax;
                     }
                 }
@@ -1100,6 +1286,13 @@
                 } else if (t.type === 'mortar') {
                     let dist = Math.hypot(target.x - t.x, target.y - t.y); let duration = Math.max(0.5, dist / 160);
                     sandbox.projectiles.push({ type: 'mortar_shell', x: t.x, y: t.y, startX: t.x, startY: t.y, tx: target.x, ty: target.y, progress: 0, speed: 1 / duration, damage: t.damage });
+                } else if (t.type === 'lemon') {
+                    let dist = Math.hypot(target.x - t.x, target.y - t.y); let duration = Math.max(0.6, dist / 150);
+                    sandbox.projectiles.push({
+                        type: 'lemon_shell', x: t.x, y: t.y, startX: t.x, startY: t.y, tx: target.x, ty: target.y,
+                        progress: 0, speed: 1 / duration, radius: t.puddleRadius || 54, puddleDuration: t.puddleDuration || 4.0,
+                        ampPercent: t.ampPercent || TOWER_DEFS.lemon.ampPercent, stunAfter: t.stunAfter || 3.0, stunDuration: t.stunDuration || 1.0
+                    });
                 } else if (t.type === 'sprinkler') {
                     if (Math.hypot(t.x - e.x, t.y - e.y) <= t.range) {
                         applyWet(e, 3.0, 0.85);
@@ -1173,17 +1366,19 @@
                 t.isFiring = false;
             }
 
-            previewCtx.beginPath();
-            previewCtx.arc(t.x, t.y, t.radius, 0, Math.PI * 2);
-            previewCtx.fillStyle = t.color;
-            previewCtx.fill();
-            previewCtx.strokeStyle = '#2c3e50';
-            previewCtx.lineWidth = 1.6;
-            previewCtx.stroke();
+            if (t.type !== 'lemon') {
+                previewCtx.beginPath();
+                previewCtx.arc(t.x, t.y, t.radius, 0, Math.PI * 2);
+                previewCtx.fillStyle = t.color;
+                previewCtx.fill();
+                previewCtx.strokeStyle = '#2c3e50';
+                previewCtx.lineWidth = 1.6;
+                previewCtx.stroke();
+            }
 
             previewCtx.save();
             previewCtx.translate(t.x, t.y);
-            drawTowerDesign(previewCtx, t.type, t.currentAngle !== undefined ? t.currentAngle : (t.angle || 0), t);
+            drawTowerDesign(previewCtx, t.type, t.type === 'chopper' ? (t.bladeAngle || 0) : (t.currentAngle !== undefined ? t.currentAngle : (t.angle || 0)), t);
             previewCtx.restore();
         });
 
@@ -1195,6 +1390,9 @@
             } else if (p.type === 'mortar_shell') {
                 previewCtx.beginPath(); previewCtx.arc(p.x, p.y, 6, 0, Math.PI * 2); previewCtx.fillStyle = '#795548'; previewCtx.fill();
                 previewCtx.strokeStyle = '#3e2723'; previewCtx.lineWidth = 1; previewCtx.stroke();
+            } else if (p.type === 'lemon_shell') {
+                previewCtx.beginPath(); previewCtx.arc(p.x, p.y, 5, 0, Math.PI * 2); previewCtx.fillStyle = '#f1c40f'; previewCtx.fill();
+                previewCtx.strokeStyle = '#b7950b'; previewCtx.lineWidth = 1; previewCtx.stroke();
             } else if (p.type === 'log_obj') {
                 previewCtx.save();
                 previewCtx.translate(p.x, p.y);
@@ -1208,11 +1406,25 @@
                 previewCtx.rotate(p.angle);
                 const visibleLength = p.length * Math.min(1, (p.age || 0) / (p.appearDuration || 0.7));
                 const alpha = Math.max(0, Math.min(1, (p.life || 0) / (p.fadeDuration || 0.45)));
-                previewCtx.globalAlpha = alpha;
-                previewCtx.fillStyle = 'rgba(243, 156, 18, 0.35)';
+                previewCtx.globalAlpha = alpha * 0.7;
+                previewCtx.fillStyle = 'rgba(243, 156, 18, 0.32)';
                 previewCtx.fillRect(0, -p.width / 2, visibleLength, p.width);
-                previewCtx.fillStyle = 'rgba(231, 76, 60, 0.24)';
+                previewCtx.fillStyle = 'rgba(231, 76, 60, 0.22)';
                 previewCtx.fillRect(6, -p.width / 2 + 6, Math.max(0, visibleLength - 12), Math.max(0, p.width - 12));
+                previewCtx.restore();
+            } else if (p.type === 'lemon_puddle') {
+                previewCtx.save();
+                const lifeAlpha = Math.max(0.15, Math.min(0.6, (p.life || 0) / 4));
+                previewCtx.globalAlpha = lifeAlpha;
+                previewCtx.beginPath();
+                previewCtx.arc(p.x, p.y, p.radius || 54, 0, Math.PI * 2);
+                previewCtx.fillStyle = 'rgba(241, 196, 15, 0.28)';
+                previewCtx.fill();
+                previewCtx.strokeStyle = 'rgba(243, 156, 18, 0.75)';
+                previewCtx.lineWidth = 1.6;
+                previewCtx.stroke();
+                previewCtx.font = '12px Arial';
+                previewCtx.fillText('🍋', p.x, p.y);
                 previewCtx.restore();
             }
         }
@@ -1256,6 +1468,8 @@
         if (e.stunTimer > 0) { previewCtx.font = 'bold 10px Arial'; previewCtx.fillText('⚡', e.x - 10, e.y - 10); }
         if (e.isWet) { previewCtx.font = '9px Arial'; previewCtx.fillText('💧', e.x + 10, e.y - 10); }
         if (e.oilTimer > 0) { previewCtx.font = '9px Arial'; previewCtx.fillText('🍳', e.x + 10, e.y + 10); }
+        if (e.lemonAmpTimer > 0) { previewCtx.font = '9px Arial'; previewCtx.fillText('🍋', e.x + 10, e.y + 10); }
+        if (e.healReductionTimer > 0) { previewCtx.font = '9px Arial'; previewCtx.fillText('💗', e.x - 10, e.y + 10); }
         const ratio = Math.max(0, e.hp / e.maxHp);
         previewCtx.fillStyle = '#e74c3c'; previewCtx.fillRect(e.x - 10, e.y - e.radius - 8, 20, 3);
         previewCtx.fillStyle = '#2ecc71'; previewCtx.fillRect(e.x - 10, e.y - e.radius - 8, 20 * ratio, 3);
@@ -1544,7 +1758,11 @@
             currentTarget: null, totalCost: cost, isFiring: false, beamTx: 0, beamTy: 0,
             angle: def.angle || -Math.PI / 2, targetAngle: def.angle || -Math.PI / 2, currentAngle: def.angle || -Math.PI / 2, 
             isBuffed: false, speedMult: 1.0,
-            baseDamage: def.damage, baseCooldownMax: def.cooldownMax, baseRange: def.range, baseProd: def.prod,
+            baseDamage: def.damage, baseMaxDamage: def.maxDamage, baseCooldownMax: def.cooldownMax, baseRange: def.range, baseProd: def.prod,
+            baseAmpPercent: def.ampPercent,
+            basePuddleRadius: def.puddleRadius,
+            baseOrbitRadius: def.orbitRadius, baseSpinSpeed: def.spinSpeed, bladeReach: def.bladeReach,
+            orbitRadius: def.orbitRadius, spinSpeed: def.spinSpeed, bladeAngle: 0,
             ...def
         };
 
@@ -1620,6 +1838,7 @@
         document.getElementById('build-menu').style.display = 'none';
         document.getElementById('upgrade-menu').style.display = 'flex';
         document.getElementById('btn-set-angle').style.display = tower.type === 'log' ? 'block' : 'none';
+        document.getElementById('btn-flip-spin').style.display = tower.type === 'chopper' ? 'block' : 'none';
         setTimeout(() => {
             window.scrollTo({ top: document.body.scrollHeight, behavior: 'auto' });
         }, 0);
@@ -1634,6 +1853,7 @@
         document.getElementById('game-wrapper').classList.remove('detail-open');
         document.getElementById('normal-bottom').style.display = 'flex';
         document.getElementById('angle-ui').style.display = 'none';
+        document.getElementById('btn-flip-spin').style.display = 'none';
         document.getElementById('tab-menu').style.display = 'flex';
         document.getElementById('build-menu').style.display = 'flex';
         document.getElementById('upgrade-menu').style.display = 'none';
@@ -1647,6 +1867,7 @@
         let refund = Math.floor(t.totalCost * 0.6);
         
         document.getElementById('upgrade-info').innerHTML = `Lv.${t.level} ➡️ <span style="color:#2ecc71;">Lv.${t.level + 1}</span> ${t.name}`;
+        document.getElementById('upgrade-money').innerHTML = `현재 골드: 💰 ${state.money}`;
         let btn = document.getElementById('btn-do-upgrade'); btn.innerText = `업그레이드 (💰 ${cost})`;
         document.getElementById('btn-sell-tower').innerText = `🔨 판매 (💰 +${refund})`;
         if (state.money < cost) btn.classList.add('disabled'); else btn.classList.remove('disabled');
@@ -1660,14 +1881,56 @@
         } else if (t.type === 'amplifier') {
             let curBuff = Math.min(50, 10 + (t.level - 1) * 5); let nextBuff = Math.min(50, curBuff + 5); let cap = nextBuff >= 50 ? ' (MAX)' : '';
             detailsHtml += `<div class="stat-row"><span>공격 속도 증가:</span> <span>📈 +${curBuff}% ➡️ <span class="stat-up">📈 +${nextBuff}%${cap}</span></span></div>`;
-            detailsHtml += `<div class="stat-row"><span>강화 사거리:</span> <span>📏 ${t.range} ➡️ <span class="stat-up">📏 ${t.range + 15}</span></span></div>`;
+            const currentRange = t.baseRange ? getRangeValue(t.baseRange, t.level) : t.range;
+            const nextRange = t.baseRange ? getRangeValue(t.baseRange, t.level + 1) : t.range + 15;
+            detailsHtml += `<div class="stat-row"><span>강화 사거리:</span> <span>📏 ${currentRange} ➡️ <span class="stat-up">📏 ${nextRange}</span></span></div>`;
+        } else if (t.type === 'chopper') {
+            const currentDamage = t.baseDamage ? getUpgradeValue(t.baseDamage, t.level) : t.damage;
+            const nextDamage = t.baseDamage ? getUpgradeValue(t.baseDamage, t.level + 1) : t.damage;
+            const currentOrbit = t.baseOrbitRadius ? getUpgradeValue(t.baseOrbitRadius, t.level) : t.orbitRadius;
+            const nextOrbit = t.baseOrbitRadius ? getUpgradeValue(t.baseOrbitRadius, t.level + 1) : t.orbitRadius;
+            const currentSpin = t.baseSpinSpeed ? getUpgradeValue(t.baseSpinSpeed, t.level) : t.spinSpeed;
+            const nextSpin = t.baseSpinSpeed ? getUpgradeValue(t.baseSpinSpeed, t.level + 1) : t.spinSpeed;
+            let speedMult = 1.0;
+            state.towers.forEach(other => {
+                if (other.type === 'amplifier' && Math.hypot(t.x - other.x, t.y - other.y) <= other.range) {
+                    speedMult = Math.max(speedMult, 1 + Math.min(0.5, 0.10 + (other.level - 1) * 0.05));
+                }
+            });
+            const currentSpeed = (currentSpin / speedMult).toFixed(2);
+            const nextSpeed = (Math.max(0.1, nextSpin / speedMult)).toFixed(2);
+            const buffTag = speedMult > 1.0 ? ' <span style="color:#f39c12; font-size:10px;">(강화됨)</span>' : '';
+            detailsHtml += `<div class="stat-row"><span>회전 피해:</span> <span>⚔️ ${Number.isInteger(currentDamage) ? currentDamage : currentDamage.toFixed(2)} ➡️ <span class="stat-up">⚔️ ${Number.isInteger(nextDamage) ? nextDamage : nextDamage.toFixed(2)}</span></span></div>`;
+            detailsHtml += `<div class="stat-row"><span>회전 반지름:</span> <span>📏 ${Math.round(currentOrbit)} ➡️ <span class="stat-up">📏 ${Math.round(nextOrbit)}</span></span></div>`;
+            detailsHtml += `<div class="stat-row"><span>회전 속도:</span> <span>🌀 ${currentSpeed}초${buffTag} ➡️ <span class="stat-up">🌀 ${nextSpeed}초</span></span></div>`;
+            detailsHtml += `<div class="stat-row"><span>치유 감소:</span> <span>💗 50% / 5초</span></div>`;
+            detailsHtml += `<div class="stat-row"><span>회전 방향:</span> <span>${(t.rotationDir || 1) > 0 ? '↻ 시계' : '↺ 반시계'}</span></div>`;
+        } else if (t.type === 'lemon') {
+            const currentAmp = getLemonAmpValue(t.baseAmpPercent || 20, t.level);
+            const nextAmp = getLemonAmpValue(t.baseAmpPercent || 20, t.level + 1);
+            const currentPuddle = getLemonPuddleRadius(t.basePuddleRadius || 54, t.level);
+            const nextPuddle = getLemonPuddleRadius(t.basePuddleRadius || 54, t.level + 1);
+            const currentCd = Math.max(t.minCooldown || 4.0, t.cooldownMax || t.baseCooldownMax || 6.0);
+            const nextCd = Math.max(t.minCooldown || 4.0, getCooldownValue(t.baseCooldownMax || 6.0, t.level + 1));
+            detailsHtml += `<div class="stat-row"><span>피해 증폭:</span> <span>🍋 +${currentAmp}% ➡️ <span class="stat-up">🍋 +${nextAmp}%</span></span></div>`;
+            detailsHtml += `<div class="stat-row"><span>장판 반경:</span> <span>📏 ${currentPuddle} ➡️ <span class="stat-up">📏 ${nextPuddle}</span></span></div>`;
+            detailsHtml += `<div class="stat-row"><span>장판 지속시간:</span> <span>⏱️ ${(t.puddleDuration || 4).toFixed(1)}초 (고정)</span></div>`;
+            detailsHtml += `<div class="stat-row"><span>기절 조건:</span> <span>🌀 ${(t.stunAfter || 3).toFixed(1)}초 체류 시 ${(t.stunDuration || 1).toFixed(1)}초 기절</span></div>`;
+            detailsHtml += `<div class="stat-row"><span>공격 대기시간:</span> <span>⏱️ ${currentCd.toFixed(2)}초 ➡️ <span class="stat-up">${nextCd.toFixed(2)}초</span></span></div>`;
         } else if (t.type === 'gelatin') {
             let curRegen = Math.max(3.0, 8.0 - (t.level - 1) * 0.5).toFixed(1);
             let nextRegen = Math.max(3.0, 8.0 - t.level * 0.5).toFixed(1);
             detailsHtml += `<div class="stat-row"><span>재생성 대기시간:</span> <span>⏱️ ${curRegen}초 ➡️ <span class="stat-up">${nextRegen}초</span></span></div>`;
             detailsHtml += `<div class="stat-row"><span>최대 충돌 횟수:</span> <span>7회 (고정)</span></div>`;
         } else {
-            if (t.type !== 'sprinkler' && t.type !== 'log') {
+            if (t.type === 'pyro') {
+                const currentMin = t.baseDamage ? getUpgradeValue(t.baseDamage, t.level) : t.damage;
+                const nextMin = t.baseDamage ? getUpgradeValue(t.baseDamage, t.level + 1) : t.damage;
+                const currentMax = t.baseMaxDamage ? getUpgradeValue(t.baseMaxDamage, t.level) : (t.maxDamage || t.damage);
+                const nextMax = t.baseMaxDamage ? getUpgradeValue(t.baseMaxDamage, t.level + 1) : (t.maxDamage || t.damage);
+                detailsHtml += `<div class="stat-row"><span>최소 피해량:</span> <span>🔥 ${Number.isInteger(currentMin) ? currentMin : currentMin.toFixed(2)} ➡️ <span class="stat-up">🔥 ${Number.isInteger(nextMin) ? nextMin : nextMin.toFixed(2)}</span></span></div>`;
+                detailsHtml += `<div class="stat-row"><span>최대 피해량:</span> <span>🔥 ${Number.isInteger(currentMax) ? currentMax : currentMax.toFixed(2)} ➡️ <span class="stat-up">🔥 ${Number.isInteger(nextMax) ? nextMax : nextMax.toFixed(2)}</span></span></div>`;
+            } else if (t.type !== 'sprinkler' && t.type !== 'log') {
                 let currentDamage = t.baseDamage ? getUpgradeValue(t.baseDamage, t.level) : t.damage;
                 let nextDamage = t.baseDamage ? getUpgradeValue(t.baseDamage, t.level + 1) : t.damage + Math.max(1, Math.floor(t.damage * 0.35));
                 detailsHtml += `<div class="stat-row"><span>기본 피해량:</span> <span>⚔️ ${Number.isInteger(currentDamage) ? currentDamage : currentDamage.toFixed(2)} ➡️ <span class="stat-up">⚔️ ${Number.isInteger(nextDamage) ? nextDamage : nextDamage.toFixed(2)}</span></span></div>`;
@@ -1704,11 +1967,24 @@
                 t.cooldownMax = getCooldownValue(t.baseCooldownMax, t.level);
             } else if (t.type === 'amplifier') {
                 t.range = getRangeValue(t.baseRange, t.level);
+            } else if (t.type === 'chopper') {
+                t.damage = getUpgradeValue(t.baseDamage, t.level);
+                t.orbitRadius = getUpgradeValue(t.baseOrbitRadius, t.level);
+                t.spinSpeed = getUpgradeValue(t.baseSpinSpeed, t.level);
+                t.range = Math.round(t.orbitRadius + (t.bladeReach || 16));
+            } else if (t.type === 'lemon') {
+                t.ampPercent = getLemonAmpValue(t.baseAmpPercent || 20, t.level);
+                t.cooldownMax = Math.max(t.minCooldown || 4.0, getCooldownValue(t.baseCooldownMax || 6.0, t.level));
+                t.range = getRangeValue(t.baseRange || 180, t.level);
+                t.puddleRadius = getLemonPuddleRadius(t.basePuddleRadius || 54, t.level);
             } else if (t.type === 'gelatin') {
                 // gelatin remains the same mechanics, level only affects regen time
             } else {
                 if (t.type === 'log') {
                     t.damage = getUpgradeValue(t.baseDamage || 0, t.level);
+                } else if (t.type === 'pyro') {
+                    t.damage = getUpgradeValue(t.baseDamage, t.level);
+                    t.maxDamage = getUpgradeValue(t.baseMaxDamage || t.maxDamage || t.baseDamage, t.level);
                 } else {
                     t.damage = getUpgradeValue(t.baseDamage, t.level);
                 }
@@ -1726,6 +2002,14 @@
         }
     };
     document.getElementById('btn-do-upgrade').addEventListener('click', handleUpgradeTouch);
+
+    const handleFlipSpinTouch = () => {
+        if (!state.selectedTower || state.selectedTower.type !== 'chopper') return;
+        state.selectedTower.rotationDir = (state.selectedTower.rotationDir || 1) * -1;
+        updateUpgradeUI();
+        saveGame();
+    };
+    document.getElementById('btn-flip-spin').addEventListener('click', handleFlipSpinTouch);
 
     const handleSellTouch = () => {
         if (!state.selectedTower) return;
@@ -1794,6 +2078,9 @@
     }
 
     function applyDamageToEnemy(target, baseDamage) {
+        if (target.lemonAmpTimer > 0 && target.lemonAmpPercent > 0) {
+            baseDamage *= (1 + target.lemonAmpPercent / 100);
+        }
         let reduction = 0;
         state.enemies.forEach(e => {
             if (e.type === 'shield' && e.hp > 0 && Math.hypot(e.x - target.x, e.y - target.y) <= 70) reduction = 0.25; 
@@ -1810,6 +2097,7 @@
 
     function update(dt) {
         const checkPathX = canvas.width / 2;
+        const now = performance.now();
 
         for (let i = state.particles.length - 1; i >= 0; i--) {
             state.particles[i].life -= dt * 2;
@@ -1907,7 +2195,8 @@
                     e.healCooldown = 1.5; let healedAny = false;
                     state.enemies.forEach(other => {
                         if (other !== e && Math.hypot(other.x - e.x, other.y - e.y) <= 90) {
-                            let healAmount = Math.min(other.maxHp - other.hp, other.maxHp * 0.25); 
+                            let healMultiplier = other.healReductionTimer > 0 ? other.healReductionMult || 0.5 : 1.0;
+                            let healAmount = Math.min(other.maxHp - other.hp, other.maxHp * 0.25) * healMultiplier; 
                             if (healAmount > 0) {
                                 other.hp += healAmount; healedAny = true;
                                 createParticle('text', other.x, other.y - 10, { text: '💚 +' + Math.floor(healAmount), color: '#2ecc71' });
@@ -1920,6 +2209,8 @@
 
             if (e.isWet) { e.wetTimer -= dt; if (e.wetTimer <= 0) { e.isWet = false; e.wetSlow = 1.0; } }
             if (e.oilTimer > 0) { e.oilTimer -= dt; }
+            if (e.healReductionTimer > 0) { e.healReductionTimer -= dt; if (e.healReductionTimer <= 0) e.healReductionMult = 1.0; }
+            if (e.lemonAmpTimer > 0) { e.lemonAmpTimer -= dt; if (e.lemonAmpTimer <= 0) e.lemonAmpPercent = 0; }
 
             if (e.stunTimer > 0 && !e.statusImmune) {
                 e.stunTimer -= dt;
@@ -1984,6 +2275,21 @@
                     p.x = p.startX + (p.tx - p.startX) * p.progress;
                     let arc = Math.sin(p.progress * Math.PI) * 60; p.y = p.startY + (p.ty - p.startY) * p.progress - arc;
                 }
+            } else if (p.type === 'lemon_shell') {
+                p.progress += p.speed * dt;
+                if (p.progress >= 1) {
+                    state.projectiles.push({
+                        type: 'lemon_puddle', x: p.tx, y: p.ty, radius: p.radius || 54, life: p.puddleDuration || 4.0,
+                        ampPercent: p.ampPercent || TOWER_DEFS.lemon.ampPercent, stunAfter: p.stunAfter || 3.0, stunDuration: p.stunDuration || 1.0,
+                        dwellMap: new Map(), stunnedSet: new Set()
+                    });
+                    createParticle('splash', p.tx, p.ty, { radius: p.radius || 54, color: 'rgba(241, 196, 15, 0.35)' });
+                    state.projectiles.splice(i, 1);
+                } else {
+                    p.x = p.startX + (p.tx - p.startX) * p.progress;
+                    let arc = Math.sin(p.progress * Math.PI) * 66;
+                    p.y = p.startY + (p.ty - p.startY) * p.progress - arc;
+                }
             } else if (p.type === 'log_obj') {
                 let moveStep = p.speed * dt; p.distance += moveStep; p.rotation += dt * 6.0; 
                 if (p.distance > p.maxDistance) { state.projectiles.splice(i, 1); continue; }
@@ -2022,6 +2328,30 @@
                         }
                     }
                 });
+            } else if (p.type === 'lemon_puddle') {
+                p.life -= dt;
+                if (p.life <= 0) { state.projectiles.splice(i, 1); continue; }
+                state.enemies.forEach(e => {
+                    const inside = Math.hypot(e.x - p.x, e.y - p.y) <= (p.radius || 54) + e.radius * 0.2;
+                    if (!inside) {
+                        p.dwellMap.delete(e);
+                        return;
+                    }
+                    if (e.shieldHp > 0) {
+                        e.shieldHp = 0;
+                        e.shieldTimer = 0;
+                        createParticle('text', e.x, e.y - 10, { text: '🛡️ 해제', color: '#f1c40f' });
+                    }
+                    e.lemonAmpTimer = Math.max(e.lemonAmpTimer || 0, 1.0);
+                    e.lemonAmpPercent = Math.max(e.lemonAmpPercent || 0, p.ampPercent || TOWER_DEFS.lemon.ampPercent);
+                    const dwell = (p.dwellMap.get(e) || 0) + dt;
+                    p.dwellMap.set(e, dwell);
+                    if (dwell >= (p.stunAfter || 3.0) && !p.stunnedSet.has(e)) {
+                        applyStun(e, p.stunDuration || 1.0);
+                        p.stunnedSet.add(e);
+                        createParticle('text', e.x, e.y - 8, { text: '🍋 기절!', color: '#f39c12' });
+                    }
+                });
             }
         }
 
@@ -2034,7 +2364,40 @@
             });
             
             t.speedMult = speedMult; t.isBuffed = (speedMult > 1.0 && t.type !== 'amplifier' && t.type !== 'mine');
-            t.cooldown -= dt * speedMult; 
+            const effectiveSpeedMult = (t.type === 'lemon')
+                ? Math.min(speedMult, (t.cooldownMax || 6.0) / (t.minCooldown || 4.0))
+                : speedMult;
+            t.cooldown -= dt * effectiveSpeedMult; 
+
+            if (t.type === 'chopper') {
+                const orbitRadius = t.orbitRadius || t.baseOrbitRadius || 38;
+                const spinSpeed = t.spinSpeed || t.baseSpinSpeed || 3.2;
+                const bladeReach = t.bladeReach || 16;
+                const rotationDir = t.rotationDir || 1;
+                t.bladeAngle = (t.bladeAngle || 0) + dt * spinSpeed * speedMult * rotationDir;
+                const bladeX = t.x + Math.cos(t.bladeAngle) * orbitRadius;
+                const bladeY = t.y + Math.sin(t.bladeAngle) * orbitRadius;
+                if (!t.hitMemory) t.hitMemory = new Map();
+                for (const enemyRef of Array.from(t.hitMemory.keys())) {
+                    if (!state.enemies.includes(enemyRef)) t.hitMemory.delete(enemyRef);
+                }
+                state.enemies.forEach(e => {
+                    const inContact = Math.hypot(e.x - bladeX, e.y - bladeY) <= e.radius + bladeReach;
+                    const wasInContact = t.hitMemory.get(e) === true;
+                    if (inContact && !wasInContact) {
+                        applyDamageToEnemy(e, t.damage);
+                        e.healReductionTimer = 5.0;
+                        e.healReductionMult = 0.5;
+                        t.hitMemory.set(e, true);
+                        createParticle('splash', bladeX, bladeY, { radius: 10, color: 'rgba(236, 240, 241, 0.35)' });
+                        createParticle('text', bladeX, bladeY - 10, { text: '💗-50%', color: '#ff6b9d' });
+                        createParticle('splash', bladeX, bladeY, { radius: 20, color: 'rgba(255, 107, 157, 0.28)' });
+                    } else if (!inContact && wasInContact) {
+                        t.hitMemory.delete(e);
+                    }
+                });
+                return;
+            }
 
             if (t.type === 'mine') {
                 if (t.cooldown <= 0) {
@@ -2085,12 +2448,36 @@
             if (t.type === 'fryer') {
                 if (t.cooldown <= 0) {
                     t.cooldown = t.cooldownMax;
-                    let angle = t.x < canvas.width / 2 ? 0 : Math.PI;
+                    let angle = getFryerAttackAngle(t.x);
                     state.projectiles.push({
                         type: 'oil_patch', x: t.x, y: t.y, angle: angle,
                         damage: t.damage * 0.7, width: 140, length: 240, hitWidth: 70,
                         hitList: [], life: 3.2, fadeDuration: 0.55, appearDuration: 0.8, age: 0, ripple: 0, flow: 0
                     });
+                }
+                return;
+            }
+
+            if (t.type === 'lemon') {
+                if (t.cooldown <= 0) {
+                    const target = state.enemies.find(e => Math.hypot(t.x - e.x, t.y - e.y) <= t.range);
+                    if (target) {
+                        t.cooldown = t.cooldownMax;
+                        t.targetAngle = Math.atan2(target.y - t.y, target.x - t.x);
+                        const dist = Math.hypot(target.x - t.x, target.y - t.y);
+                        const duration = Math.max(0.6, dist / 150);
+                        state.projectiles.push({
+                            type: 'lemon_shell', x: t.x, y: t.y, startX: t.x, startY: t.y, tx: target.x, ty: target.y,
+                            progress: 0, speed: 1 / duration, radius: t.puddleRadius || 54, puddleDuration: t.puddleDuration || 4.0,
+                            ampPercent: t.ampPercent || TOWER_DEFS.lemon.ampPercent, stunAfter: t.stunAfter || 3.0, stunDuration: t.stunDuration || 1.0
+                        });
+                    }
+                }
+                if (t.currentAngle !== undefined) {
+                    let diff = t.targetAngle - t.currentAngle;
+                    while (diff < -Math.PI) diff += Math.PI * 2;
+                    while (diff > Math.PI) diff -= Math.PI * 2;
+                    t.currentAngle += diff * dt * 8;
                 }
                 return;
             }
@@ -2123,7 +2510,10 @@
                     t.beamTx = t.currentTarget.x; t.beamTy = t.currentTarget.y;
                     t.targetAngle = Math.atan2(t.currentTarget.y - t.y, t.currentTarget.x - t.x);
                     if (t.cooldown <= 0) {
-                        applyDamageToEnemy(t.currentTarget, t.damage + Math.floor(t.laserCharge)); t.cooldown = t.cooldownMax;
+                        const chargeRatio = Math.max(0, Math.min(1, (t.laserCharge || 0) / 10));
+                        const minDamage = t.damage;
+                        const maxDamage = t.maxDamage || t.baseMaxDamage || t.damage;
+                        applyDamageToEnemy(t.currentTarget, minDamage + (maxDamage - minDamage) * chargeRatio); t.cooldown = t.cooldownMax;
                     }
                 }
                 
@@ -2178,6 +2568,13 @@
                 } else if (t.type === 'mortar') {
                     let dist = Math.hypot(target.x - t.x, target.y - t.y); let duration = Math.max(0.5, dist / 160); 
                     state.projectiles.push({ type: 'mortar_shell', x: t.x, y: t.y, startX: t.x, startY: t.y, tx: target.x, ty: target.y, progress: 0, speed: 1 / duration, damage: t.damage });
+                } else if (t.type === 'lemon') {
+                    let dist = Math.hypot(target.x - t.x, target.y - t.y); let duration = Math.max(0.6, dist / 150);
+                    state.projectiles.push({
+                        type: 'lemon_shell', x: t.x, y: t.y, startX: t.x, startY: t.y, tx: target.x, ty: target.y,
+                        progress: 0, speed: 1 / duration, radius: t.puddleRadius || 54, puddleDuration: t.puddleDuration || 4.0,
+                        ampPercent: t.ampPercent || TOWER_DEFS.lemon.ampPercent, stunAfter: t.stunAfter || 3.0, stunDuration: t.stunDuration || 1.0
+                    });
                 } else if (t.type === 'sprinkler') {
                     state.enemies.forEach(e => {
                         if (Math.hypot(t.x - e.x, t.y - e.y) <= t.range) { 
@@ -2217,31 +2614,332 @@
                 ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI*2); ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 1; ctx.stroke(); 
                 break;
             case 'cannon': 
-                ctx.rotate(renderAngle); ctx.fillStyle = '#27ae60'; ctx.fillRect(4, -4, 18, 8); 
+                ctx.rotate(renderAngle);
+                // 완두콩 발사대: 초록 본체 + 잎 + 3연 발사구
+                ctx.fillStyle = '#0f7f2a';
+                ctx.beginPath();
+                ctx.arc(-2, 0, 11, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 1.6;
+                ctx.stroke();
+
+                ctx.fillStyle = '#8fb754';
+                ctx.beginPath();
+                ctx.arc(-4, -4, 5.1, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = '#1f8e3c';
+                ctx.beginPath();
+                ctx.ellipse(-10.8, -6.8, 4.0, 2.2, -0.7, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.ellipse(-12.4, -2.6, 3.6, 2.0, -0.15, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = '#20a650';
+                ctx.beginPath();
+                ctx.roundRect(4, -3.9, 12.8, 7.8, 3.8);
+                ctx.fill();
+                ctx.stroke();
+                ctx.fillStyle = '#4dbd74';
+                for (let n = 0; n < 3; n++) {
+                    ctx.beginPath();
+                    ctx.arc(7.2 + n * 3.7, 0, 1.5, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+                }
                 break;
             case 'shotgun': 
-                ctx.fillStyle = '#bdc3c7'; ctx.beginPath(); ctx.arc(0,0,10,0,Math.PI*2); ctx.fill(); 
-                ctx.rotate(renderAngle); ctx.fillStyle = '#34495e'; ctx.fillRect(2, -2, 14, 4); 
+                ctx.rotate(renderAngle);
+                // 압력솥: 회색 솥 + 중앙 검은 뚜껑 + 빨간 밸브 + 검은 손잡이
+                ctx.fillStyle = '#a9a7a7';
+                ctx.beginPath();
+                ctx.arc(0, 0, 10.2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 1.6;
+                ctx.stroke();
+
+                ctx.fillStyle = '#000';
+                ctx.beginPath();
+                ctx.arc(1.6, 0, 4.3, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#ff1f1f';
+                ctx.beginPath();
+                ctx.arc(-5.8, 0.2, 1.3, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = '#000';
+                ctx.beginPath();
+                ctx.roundRect(6.4, -2.3, 8.4, 4.6, 2.2);
+                ctx.fill();
                 break;
             case 'mortar': 
-                ctx.rotate(renderAngle); ctx.fillStyle = '#5d4037'; ctx.fillRect(0, -6, 12, 12); 
+                ctx.rotate(renderAngle);
+                // 코코넛 발사기: 코코넛 껍질 + 전면 코코넛 알맹이
+                ctx.fillStyle = '#8a5f45';
+                ctx.beginPath();
+                ctx.arc(-3.5, 0, 8.7, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+
+                ctx.fillStyle = '#ece8df';
+                ctx.beginPath();
+                ctx.ellipse(-4.3, -1.8, 5.2, 3.8, -0.4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = '#5b3d2e';
+                ctx.beginPath();
+                ctx.arc(4.5, 1.0, 6.7, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+                ctx.fillStyle = '#3a271e';
+                ctx.beginPath(); ctx.arc(2.4, 1.0, 0.9, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.arc(4.5, -0.7, 0.9, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.arc(5.5, 2.5, 0.9, 0, Math.PI * 2); ctx.fill();
+                break;
+            case 'lemon':
+                ctx.rotate(renderAngle);
+                {
+                const lemonBaseRadius = 16;
+                const lemonRadius = (tObj && typeof tObj.radius === 'number') ? tObj.radius : (TOWER_DEFS.lemon.radius || lemonBaseRadius);
+                const lemonScale = Math.max(1, lemonRadius / lemonBaseRadius);
+                ctx.save();
+                ctx.translate(-2 * lemonScale, 0);
+                ctx.fillStyle = '#5f5f5f';
+                ctx.beginPath();
+                ctx.arc(-5.2 * lemonScale, 0, 5.6 * lemonScale, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#111';
+                ctx.lineWidth = 1.25 * lemonScale;
+                ctx.stroke();
+
+                ctx.fillStyle = '#f5e500';
+                ctx.beginPath();
+                ctx.arc(0, 0, 11.8 * lemonScale, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = '#f7c71a';
+                ctx.beginPath();
+                ctx.arc(0.3 * lemonScale, 0, 8.8 * lemonScale, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.strokeStyle = 'rgba(0,0,0,0.75)';
+                ctx.lineWidth = 1.05 * lemonScale;
+                for (let i = 0; i < 6; i++) {
+                    const a = (Math.PI * 2 * i) / 6;
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.lineTo(Math.cos(a) * 8.3 * lemonScale, Math.sin(a) * 8.3 * lemonScale);
+                    ctx.stroke();
+                }
+
+                ctx.fillStyle = '#d9d9d9';
+                ctx.beginPath();
+                ctx.roundRect(9.2 * lemonScale, -7.0 * lemonScale, 9.8 * lemonScale, 14.0 * lemonScale, 1.8 * lemonScale);
+                ctx.fill();
+                ctx.strokeStyle = '#111';
+                ctx.lineWidth = 1.2 * lemonScale;
+                ctx.stroke();
+
+                ctx.fillStyle = '#111';
+                ctx.beginPath();
+                ctx.arc(14.1 * lemonScale, -0.2 * lemonScale, 3.2 * lemonScale, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#ff2f2f';
+                ctx.beginPath();
+                ctx.arc(11.4 * lemonScale, -4.6 * lemonScale, 1.4 * lemonScale, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#19d045';
+                ctx.beginPath();
+                ctx.ellipse(-8.8 * lemonScale, -9.2 * lemonScale, 5.2 * lemonScale, 2.5 * lemonScale, -0.55, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#111';
+                ctx.lineWidth = 1.0 * lemonScale;
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.ellipse(-5.2 * lemonScale, -12.2 * lemonScale, 3.1 * lemonScale, 1.7 * lemonScale, -1.0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+                ctx.restore();
+                }
                 break;
             case 'tesla': 
-                ctx.fillStyle = '#7f8c8d'; ctx.fillRect(-8, -6, 16, 12); 
-                ctx.strokeStyle = '#34495e'; ctx.lineWidth = 1;
-                for(let y = -4; y <= 4; y += 4) { ctx.beginPath(); ctx.moveTo(-6, y); ctx.lineTo(6, y); ctx.stroke(); }
+                ctx.save();
+                ctx.translate(-1, 0);
+                ctx.fillStyle = '#5f5f5f';
+                ctx.beginPath();
+                ctx.arc(0, 0, 18, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#111';
+                ctx.lineWidth = 1.8;
+                ctx.stroke();
+
+                ctx.fillStyle = '#c6c6c6';
+                for (let y = -10; y <= 10; y += 6) {
+                    ctx.fillRect(-14.5, y - 1.1, 20, 2.2);
+                    ctx.strokeRect(-14.5, y - 1.1, 20, 2.2);
+                    ctx.strokeStyle = '#111';
+                }
+
+                ctx.fillStyle = '#111';
+                ctx.beginPath();
+                ctx.arc(12.2, 0, 8.6, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#c7c7c7';
+                ctx.beginPath();
+                ctx.roundRect(10.5, -13.5, 10.5, 27, 0.5);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = '#000';
+                ctx.beginPath();
+                ctx.arc(14.8, -0.8, 3.0, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#ff1f1f';
+                ctx.beginPath();
+                ctx.arc(10.1, -5.1, 1.7, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#f1c40f';
+                ctx.beginPath();
+                ctx.moveTo(13.0, -6.4);
+                ctx.lineTo(10.4, 0.2);
+                ctx.lineTo(14.0, 0.2);
+                ctx.lineTo(12.0, 8.8);
+                ctx.lineTo(16.8, 1.0);
+                ctx.lineTo(13.0, 1.0);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+                ctx.restore();
                 break;
             case 'pyro': 
                 ctx.rotate(renderAngle); 
-                ctx.fillStyle = '#3498db'; ctx.fillRect(-4, -6, 8, 12); 
-                ctx.fillStyle = '#f1c40f'; ctx.fillRect(4, -2, 6, 4);   
+                // 토치: 어두운 원형 헤드 + 주황 링 + 빨간 코어 + 은색 손잡이
+                ctx.fillStyle = '#5f5f5f';
+                ctx.beginPath();
+                ctx.arc(0, 0, 10, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 1.6;
+                ctx.stroke();
+
+                ctx.fillStyle = '#ff8a1e';
+                ctx.beginPath();
+                ctx.arc(-0.3, 0, 4.0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = '#ff2020';
+                ctx.beginPath();
+                ctx.arc(-0.3, 0, 1.8, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#bebebe';
+                ctx.beginPath();
+                ctx.roundRect(3.4, -2.2, 11.2, 4.4, 1.8);
+                ctx.fill();
+                ctx.stroke();
+                ctx.fillStyle = '#a5a2a2';
+                for (let n = 0; n < 3; n++) {
+                    ctx.beginPath();
+                    ctx.ellipse(6.3 + n * 2.9, 0, 0.95, 1.5, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.fillStyle = '#b7b4b4';
+                ctx.beginPath();
+                ctx.roundRect(13.4, -2.5, 3.0, 5.0, 1.8);
+                ctx.fill();
+                ctx.stroke();
                 break;
             case 'crossbow': 
                 ctx.rotate(renderAngle); 
-                ctx.fillStyle = '#a0522d'; ctx.fillRect(2, -1, 14, 2); 
-                ctx.fillStyle = '#f5deb3'; ctx.fillRect(4, -0.5, 12, 1); 
-                ctx.beginPath(); ctx.moveTo(12, -6); ctx.lineTo(16, 0); ctx.lineTo(12, 6); 
-                ctx.strokeStyle = '#a0522d'; ctx.lineWidth = 1.5; ctx.stroke(); 
+                {
+                    ctx.scale(0.78, 0.78);
+                    ctx.fillStyle = '#e7d68c';
+                    ctx.beginPath();
+                    ctx.rect(-20, -9, 22, 18);
+                    ctx.fill();
+                    ctx.strokeStyle = '#111';
+                    ctx.lineWidth = 1.2;
+                    ctx.stroke();
+
+                    ctx.fillStyle = '#1b1b1b';
+                    ctx.beginPath();
+                    ctx.arc(-6.2, 0, 5.8, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.fillStyle = '#bdbdbd';
+                    ctx.beginPath();
+                    ctx.roundRect(-18, -4.7, 8.4, 9.4, 1.0);
+                    ctx.fill();
+                    ctx.stroke();
+
+                    ctx.fillStyle = '#666';
+                    ctx.beginPath();
+                    ctx.roundRect(-21, -4.7, 3.6, 9.4, 0.8);
+                    ctx.fill();
+                    ctx.stroke();
+
+                    ctx.strokeStyle = '#4a3326';
+                    ctx.lineWidth = 7.2;
+                    ctx.beginPath();
+                    ctx.arc(0.35, 0, 28.0, -1.0, 1.0);
+                    ctx.stroke();   
+
+                    ctx.strokeStyle = '#111';
+                    ctx.lineWidth = 1.2;
+                    ctx.beginPath();
+                    ctx.arc(0.40, 0, 28.0, -1.0, 1.0);
+                    ctx.stroke();
+
+                    ctx.strokeStyle = '#ffcf33';
+                    ctx.lineWidth = 1.9;
+                    ctx.beginPath();
+                    ctx.moveTo(-1.6, -3.2);
+                    ctx.lineTo(13.5, -24.5);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(-1.6, 3.2);
+                    ctx.lineTo(13.5, 24.5);
+                    ctx.stroke();
+
+                    ctx.strokeStyle = '#000';
+                    ctx.lineWidth = 2.5;
+                    ctx.beginPath();
+                    ctx.moveTo(-6.4, 0);
+                    ctx.lineTo(44, 0);
+                    ctx.stroke();
+                    ctx.strokeStyle = '#f2e8b8';
+                    ctx.lineWidth = 1.0;
+                    ctx.beginPath();
+                    ctx.moveTo(-6.4, 0);
+                    ctx.lineTo(44, 0);
+                    ctx.stroke();
+
+                    ctx.fillStyle = '#111';
+                    ctx.beginPath();
+                    ctx.moveTo(44, 0);
+                    ctx.lineTo(50, -1.2);
+                    ctx.lineTo(50, 1.2);
+                    ctx.closePath();
+                    ctx.fill();
+                }
                 break;
             case 'log': 
                 ctx.rotate(renderAngle); 
@@ -2254,11 +2952,87 @@
                 ctx.fillStyle = '#e74c3c'; ctx.fillRect(-4, 0, 3, 3); 
                 ctx.fillStyle = '#3498db'; ctx.fillRect(1, 0, 3, 3); 
                 break;
+            case 'chopper':
+                ctx.rotate(renderAngle);
+                {
+                    const rangeRadius = tObj && typeof tObj.range === 'number' ? tObj.range : 54;
+                    const bladeReach = tObj && typeof tObj.bladeReach === 'number' ? tObj.bladeReach : 16;
+                    const bodyScale = 0.95;
+                    const handleLength = 12 * bodyScale;
+                    const bladeStart = 3 + handleLength;
+                    const bladeLength = Math.max(10, rangeRadius - bladeStart);
+                    const bladeWidth = Math.max(4.2, Math.min(8.0, bladeReach * 0.42));
+                    ctx.globalAlpha = 0.68;
+                    ctx.fillStyle = '#2f3b4a';
+                    ctx.beginPath();
+                    ctx.arc(-2, 0, 5 * bodyScale, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#111';
+                    ctx.fillRect(3, -2.2 * bodyScale, handleLength, 4.4 * bodyScale);
+                    ctx.fillStyle = 'rgba(207,216,220,0.82)';
+                    ctx.fillRect(bladeStart, -bladeWidth / 2, bladeLength, bladeWidth);
+                    ctx.lineWidth = 1.3 * bodyScale;
+                    ctx.strokeStyle = 'rgba(17,17,17,0.85)';
+                    ctx.strokeRect(bladeStart, -bladeWidth / 2, bladeLength, bladeWidth);
+                    ctx.fillStyle = 'rgba(255,255,255,0.24)';
+                    ctx.fillRect(bladeStart + 5, -0.8 * bodyScale, Math.max(6, bladeLength - 10), 1.0 * bodyScale);
+                    ctx.fillStyle = 'rgba(255, 107, 157, 0.18)';
+                    ctx.fillRect(bladeStart, -bladeWidth / 2 - 1.1, bladeLength, 0.9);
+                    ctx.fillRect(bladeStart, bladeWidth / 2 + 0.2, bladeLength, 0.8);
+                    ctx.fillStyle = 'rgba(31, 76, 94, 0.42)';
+                    ctx.fillRect(0, -1.2 * bodyScale, 3 * bodyScale, 2.4 * bodyScale);
+                }
+                ctx.globalAlpha = 1;
+                break;
             case 'fryer':
                 ctx.rotate(renderAngle);
-                ctx.fillStyle = '#7f8c8d'; ctx.fillRect(-6, -8, 12, 16); 
-                ctx.fillStyle = '#d35400'; ctx.fillRect(3, -4, 6, 8); 
-                ctx.fillStyle = '#f39c12'; ctx.beginPath(); ctx.arc(-2, 0, 4, 0, Math.PI*2); ctx.fill();
+                {
+                    ctx.fillStyle = '#8e8e8e';
+                    ctx.beginPath();
+                    ctx.arc(0, 0, 18, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#111';
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+
+                    ctx.fillStyle = '#c9c9c9';
+                    ctx.fillRect(-13, -10, 24, 20);
+                    ctx.strokeRect(-13, -10, 24, 20);
+
+                    ctx.fillStyle = '#2f2f2f';
+                    ctx.fillRect(-9, -5, 17, 11);
+
+                    ctx.fillStyle = '#f1c40f';
+                    for (let x = -10; x <= 10; x += 3) {
+                        ctx.fillRect(x, -8, 1.4, 16);
+                    }
+                    for (let y = -8; y <= 8; y += 4) {
+                        ctx.fillRect(-10, y, 20, 1.2);
+                    }
+
+                    ctx.fillStyle = '#111';
+                    ctx.beginPath();
+                    ctx.roundRect(-8, 12, 18, 7, 2);
+                    ctx.fill();
+                    ctx.stroke();
+
+                    ctx.fillStyle = '#f39c12';
+                    ctx.beginPath();
+                    ctx.arc(1, 0, 3.5, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+
+                    ctx.fillStyle = '#e67e22';
+                    ctx.beginPath();
+                    ctx.arc(1, 0, 7.5, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.globalAlpha = 0.45;
+                    ctx.fillStyle = '#ffb347';
+                    ctx.beginPath();
+                    ctx.arc(1, 0, 10.5, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.globalAlpha = 1;
+                }
                 break;
             case 'gelatin':
                 ctx.fillStyle = '#9b59b6';
@@ -2315,6 +3089,62 @@
             ctx.arc(checkPathX + 2, y - 10, 3, 0, Math.PI * 2); ctx.fill();
         }
 
+        state.projectiles.forEach(p => {
+            if (p.type !== 'oil_patch') return;
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.angle);
+            const width = p.width || 140;
+            const visibleLength = (p.length || 240) * Math.min(1, (p.age || 0) / (p.appearDuration || 0.8));
+            const alpha = Math.max(0.30, Math.min(0.65, ((p.life || 0) / (p.fadeDuration || 0.55)) * 0.55 + 0.03));
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle = 'rgba(72, 52, 27, 0.52)';
+            ctx.beginPath();
+            ctx.moveTo(0, -width / 2);
+            ctx.lineTo(visibleLength, -width / 2 + Math.sin((p.flow || 0) * 0.6) * 4);
+            ctx.quadraticCurveTo(visibleLength + 12, 0, visibleLength, width / 2 - Math.sin((p.flow || 0) * 0.8) * 4);
+            ctx.lineTo(0, width / 2);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = 'rgba(255, 193, 7, 0.28)';
+            ctx.beginPath();
+            ctx.moveTo(8, -width / 2 + 8);
+            ctx.lineTo(Math.max(12, visibleLength - 10), -width / 2 + 6);
+            ctx.lineTo(Math.max(12, visibleLength - 10), width / 2 - 6);
+            ctx.lineTo(8, width / 2 - 8);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = 'rgba(255, 236, 179, 0.42)';
+            for (let n = 0; n < 6; n++) {
+                const offset = (visibleLength * (n + 1)) / 7;
+                const bubbleX = 8 + offset + Math.sin((p.flow || 0) * 1.8 + n) * 5;
+                const bubbleY = Math.sin((p.flow || 0) * 2.2 + n) * (width * 0.18);
+                const bubbleSize = 1.5 + ((n + 1) % 3) * 0.8;
+                ctx.beginPath();
+                ctx.arc(bubbleX, bubbleY, bubbleSize, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.restore();
+        });
+
+        state.projectiles.forEach(p => {
+            if (p.type !== 'lemon_puddle') return;
+            const alpha = Math.max(0.12, Math.min(0.5, (p.life || 0) / (p.puddleDuration || 4.0)));
+            ctx.globalAlpha = alpha;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius || 54, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(241, 196, 15, 0.28)';
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(243, 156, 18, 0.72)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+            ctx.fillStyle = 'rgba(243, 156, 18, 0.8)';
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('🍋', p.x, p.y + 1);
+        });
+
         state.towers.forEach(t => {
             if (t.type === 'gelatin' && t.isCompleted && t.partner && t.x < t.partner.x) {
                 ctx.save();
@@ -2344,7 +3174,9 @@
 
         state.towers.forEach(t => {
             if (t.isBuffed) {
-                ctx.beginPath(); ctx.arc(t.x, t.y, t.radius + 3, 0, Math.PI * 2);
+                ctx.beginPath();
+                const buffRingRadius = t.type === 'lemon' ? (t.radius + 5) : (t.radius + 3);
+                ctx.arc(t.x, t.y, buffRingRadius, 0, Math.PI * 2);
                 ctx.strokeStyle = 'rgba(243, 156, 18, 0.8)'; ctx.lineWidth = 3; ctx.stroke();
             }
 
@@ -2355,11 +3187,13 @@
                 ctx.strokeStyle = '#f1c40f'; ctx.lineWidth = t.laserCharge / 2 + 1; ctx.stroke(); ctx.restore();
             }
 
-            ctx.beginPath(); ctx.arc(t.x, t.y, t.radius, 0, Math.PI * 2);
-            ctx.fillStyle = t.color; ctx.fill(); ctx.strokeStyle = '#2c3e50'; ctx.lineWidth = 2.5; ctx.stroke();
+            if (t.type !== 'lemon') {
+                ctx.beginPath(); ctx.arc(t.x, t.y, t.radius, 0, Math.PI * 2);
+                ctx.fillStyle = t.color; ctx.fill(); ctx.strokeStyle = '#2c3e50'; ctx.lineWidth = 2.5; ctx.stroke();
+            }
 
             ctx.save(); ctx.translate(t.x, t.y);
-            let renderAngle = t.type === 'log' ? t.angle : (t.currentAngle !== undefined ? t.currentAngle : 0);
+            let renderAngle = t.type === 'log' ? t.angle : (t.type === 'chopper' ? (t.bladeAngle || 0) : (t.currentAngle !== undefined ? t.currentAngle : 0));
             drawTowerDesign(ctx, t.type, renderAngle, t);
             ctx.restore();
 
@@ -2390,7 +3224,6 @@
             if (state.dragCardType === 'gelatin' && state.pendingGelatin && !isCanceled) {
                 ctx.beginPath(); ctx.arc(state.pendingGelatin.x, state.pendingGelatin.y, 160, 0, Math.PI * 2);
                 ctx.fillStyle = 'rgba(155, 89, 182, 0.08)'; ctx.fill();
-                ctx.strokeStyle = 'rgba(155, 89, 182, 0.3)'; ctx.lineWidth = 1; ctx.stroke();
                 
                 ctx.beginPath(); ctx.moveTo(state.pendingGelatin.x, state.pendingGelatin.y);
                 ctx.lineTo(px, py);
@@ -2401,6 +3234,21 @@
                 ctx.setLineDash([4, 4]);
                 ctx.stroke();
                 ctx.setLineDash([]);
+            } else if (state.dragCardType === 'fryer' && !isCanceled) {
+                const attackAngle = getFryerAttackAngle(px);
+                const rectLength = def.attackLength || 240;
+                const rectWidth = def.attackWidth || 140;
+                const rectX = attackAngle === 0 ? px : px - rectLength;
+                ctx.fillStyle = 'rgba(255, 193, 7, 0.18)';
+                ctx.fillRect(rectX, py - rectWidth / 2, rectLength, rectWidth);
+                ctx.strokeStyle = 'rgba(255, 193, 7, 0.65)';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(rectX, py - rectWidth / 2, rectLength, rectWidth);
+                ctx.fillStyle = 'rgba(255, 140, 0, 0.18)';
+                for (let stripe = 0; stripe < 5; stripe++) {
+                    const stripeY = py - rectWidth / 2 + 14 + stripe * 22;
+                    ctx.fillRect(rectX + 8, stripeY, rectLength - 16, 6);
+                }
             } else if (def.range > 0 && !isCanceled) {
                 ctx.beginPath(); ctx.arc(px, py, def.range, 0, Math.PI * 2);
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.15)'; ctx.fill();
@@ -2408,14 +3256,16 @@
             }
 
             ctx.globalAlpha = 0.6;
-            ctx.beginPath(); ctx.arc(px, py, def.radius, 0, Math.PI * 2);
             let canBuildHere = canBuild(px, py, def.radius);
-            ctx.fillStyle = isCanceled || !canBuildHere ? '#e74c3c' : def.color; 
-            ctx.fill(); ctx.strokeStyle = '#2c3e50'; ctx.lineWidth = 2.5; ctx.stroke();
+            if (state.dragCardType !== 'lemon') {
+                ctx.beginPath(); ctx.arc(px, py, def.radius, 0, Math.PI * 2);
+                ctx.fillStyle = isCanceled || !canBuildHere ? '#e74c3c' : def.color; 
+                ctx.fill(); ctx.strokeStyle = '#2c3e50'; ctx.lineWidth = 2.5; ctx.stroke();
+            }
 
             ctx.translate(px, py);
             let renderAngle = def.angle || -Math.PI / 2;
-            drawTowerDesign(ctx, state.dragCardType, renderAngle, null);
+            drawTowerDesign(ctx, state.dragCardType, renderAngle, def);
             ctx.restore();
         }
 
@@ -2430,6 +3280,8 @@
             if (e.stunTimer > 0) { ctx.font = 'bold 11px Arial'; ctx.fillText('⚡', -12, -12); }
             if (e.isWet) { ctx.font = '10px Arial'; ctx.fillText('💧', 12, -12); }
             if (e.oilTimer > 0) { ctx.font = '10px Arial'; ctx.fillText('🍳', 12, 12); }
+            if (e.lemonAmpTimer > 0) { ctx.font = '10px Arial'; ctx.fillText('🍋', 12, 12); }
+            if (e.healReductionTimer > 0) { ctx.font = '10px Arial'; ctx.fillText('💗', -12, 12); }
             if (e.shieldHp > 0) { ctx.font = '10px Arial'; ctx.fillText('🛡️', -12, 12); }
             ctx.restore();
 
@@ -2446,11 +3298,15 @@
         });
 
         state.projectiles.forEach(p => {
+            if (p.type === 'oil_patch' || p.type === 'lemon_puddle') return;
             if (p.type === 'cannon_ball') {
                 ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI * 2); ctx.fillStyle = '#2ecc71'; ctx.fill(); 
             } else if (p.type === 'mortar_shell') {
                 ctx.beginPath(); ctx.arc(p.x, p.y, 6, 0, Math.PI * 2); ctx.fillStyle = '#795548'; ctx.fill(); 
                 ctx.strokeStyle = '#3e2723'; ctx.lineWidth = 1; ctx.stroke();
+            } else if (p.type === 'lemon_shell') {
+                ctx.beginPath(); ctx.arc(p.x, p.y, 5, 0, Math.PI * 2); ctx.fillStyle = '#f1c40f'; ctx.fill();
+                ctx.strokeStyle = '#b7950b'; ctx.lineWidth = 1; ctx.stroke();
             } else if (p.type === 'arrow') {
                 ctx.save(); ctx.translate(p.x, p.y);
                 let angle = p.target ? Math.atan2(p.target.y - p.y, p.target.x - p.x) : 0; ctx.rotate(angle);
@@ -2522,7 +3378,7 @@
 
         if (!state.isWaveActive && state.waveDelay > 0) {
             ctx.fillStyle = 'white'; ctx.font = 'bold 22px "Segoe UI", Arial, sans-serif'; ctx.textAlign = 'center';
-            ctx.fillText(`웨이브 ${state.wave} 준비 중`, canvas.width/2, canvas.height/2 - 10);
+            ctx.fillText(`웨이브 ${state.wave + 1} 준비 중`, canvas.width/2, canvas.height/2 - 10);
             ctx.font = '14px "Segoe UI", Arial, sans-serif'; ctx.fillText(`${Math.ceil(state.waveDelay)}초 후 시작합니다`, canvas.width/2, canvas.height/2 + 18);
         }
     }
