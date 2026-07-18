@@ -1966,11 +1966,11 @@
                     speedMult = Math.max(speedMult, 1 + Math.min(0.5, 0.10 + (other.level - 1) * 0.05));
                 }
             });
-            const minCdFloor = t.type === 'crossbow' ? 0.02 : 0.1;
+            const minCdFloor = t.type === 'crossbow' ? 0.06 : 0.1;
             let curSpeed = (t.cooldownMax / speedMult).toFixed(2);
             let nextSpeed;
             if (t.type === 'crossbow') {
-                const nextCd = getCooldownValue(t.baseCooldownMax, t.level + 1, 0.1, 0.02);
+                const nextCd = getCooldownValue(t.baseCooldownMax, t.level + 1, 0.1, 0.06);
                 nextSpeed = (nextCd / speedMult).toFixed(2);
             } else {
                 nextSpeed = (Math.max(minCdFloor, t.cooldownMax * 0.9) / speedMult).toFixed(2);
@@ -2014,7 +2014,7 @@
                 }
                 if (t.range > 0) t.range = getRangeValue(t.baseRange, t.level);
                 t.cooldownMax = t.type === 'crossbow'
-                    ? getCooldownValue(t.baseCooldownMax, t.level, 0.1, 0.02)
+                    ? getCooldownValue(t.baseCooldownMax, t.level, 0.1, 0.06)
                     : getCooldownValue(t.baseCooldownMax, t.level);
                 if (t.type === 'tesla') t.stunDuration = Math.min(1.8, (t.stunDuration || 0.5) + 0.25);
             }
