@@ -571,7 +571,7 @@
                     baseDamage: TOWER_DEFS[t.type].damage, baseMaxDamage: TOWER_DEFS[t.type].maxDamage, baseCooldownMax: TOWER_DEFS[t.type].cooldownMax, baseRange: TOWER_DEFS[t.type].range, baseProd: TOWER_DEFS[t.type].prod,
                     baseAmpPercent: TOWER_DEFS[t.type].ampPercent,
                     baseOrbitRadius: TOWER_DEFS[t.type].orbitRadius, baseSpinSpeed: TOWER_DEFS[t.type].spinSpeed, bladeReach: TOWER_DEFS[t.type].bladeReach,
-                    rotationDir: TOWER_DEFS[t.type].rotationDir,
+                    rotationDir: (typeof t.rotationDir === 'number') ? t.rotationDir : TOWER_DEFS[t.type].rotationDir,
                     hitMemory: new Map()
                 }));
 
