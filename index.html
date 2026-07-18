@@ -354,6 +354,11 @@
     const DISPLAY_SCALE = 1.6;
     const CHOPPER_MAX_SPIN = 7.0;
     const CHOPPER_MAX_ORBIT_RADIUS = 120;
+    const CHOPPER_DAMAGE_MULT = 0.6;
+    const CHOPPER_HEAL_REDUCTION_MULT = 0.7;
+    const CROSSBOW_MIN_COOLDOWN = 0.12;
+    const MILK_DISABLE_INTERVAL = 8.0;
+    const MILK_DISABLE_DURATION = 2.5;
 
     const pauseReasons = new Set();
     function setPause(reason, shouldPause) {
@@ -414,8 +419,8 @@
             stats: ['사거리 80', '최소 피해 0.27 / 최대 피해 26.35', '짧은 공격 주기']
         },
         chopper: {
-            desc: '타워 주변을 회전하는 중식도로 가까이 오는 적을 베는 근접 타워입니다. 적을 맞히면 5초간 치유량을 50% 감소시킵니다.',
-            stats: ['회전 반지름 38', '피해 24', '회전 속도 3.2', '치유 감소 50% / 5초']
+            desc: '타워 주변을 회전하는 중식도로 가까이 오는 적을 베는 근접 타워입니다. 적을 맞히면 5초간 치유량을 30% 감소시킵니다.',
+            stats: ['회전 반지름 38', '피해 24 (실적용 40% 너프)', '회전 속도 3.2', '치유 감소 30% / 5초']
         },
         lemon: {
             desc: '포물선으로 레몬즙을 쏴 장판을 생성하는 보조 타워입니다. 장판 위 적은 보호막이 즉시 제거되고 더 큰 피해를 받습니다.',
@@ -792,7 +797,7 @@
             let grapeCount = 2 + Math.floor(waveNum / 3);
             addSpawn('grape', grapeCount, speedMultiplier * 0.95);
         }
-        if (waveNum >= 6) {
+        if (waveNum >= 15) {
             let milkCount = 1 + Math.floor(waveNum / 4);
             addSpawn('milk', milkCount, speedMultiplier * 0.9);
         }
@@ -823,7 +828,9 @@
             shieldHp: 0, shieldTimer: 0,
             healReductionTimer: 0, healReductionMult: 1.0,
             lemonAmpTimer: 0, lemonAmpPercent: 0,
-            statusImmune: false, slowImmune: false
+            statusImmune: false, slowImmune: false,
+            milkAttackers: type === 'milk' ? new Set() : null,
+            milkDisableTimer: type === 'milk' ? MILK_DISABLE_INTERVAL : 0
         };
     }
 
@@ -848,7 +855,7 @@
         if (waveNum >= 5) {
             lines.push(`🍇 ${ENEMY_DEFS.grape.name} x${2 + Math.floor(waveNum / 3)}`);
         }
-        if (waveNum >= 6) {
+        if (waveNum >= 15) {
             lines.push(`🥛 ${ENEMY_DEFS.milk.name} x${1 + Math.floor(waveNum / 4)}`);
         }
         if (waveNum >= 7) {
@@ -1184,9 +1191,9 @@
                 const inContact = tipContact || tipSweepContact || innerNowContact || innerPrevContact;
                 const wasInContact = t.hitMemory.get(e) === true;
                 if (inContact && !wasInContact) {
-                    tooltipApplyDamage(e, t.damage);
+                    tooltipApplyDamage(e, t.damage * CHOPPER_DAMAGE_MULT);
                     e.healReductionTimer = 5.0;
-                    e.healReductionMult = 0.5;
+                    e.healReductionMult = CHOPPER_HEAL_REDUCTION_MULT;
                     t.hitMemory.set(e, true);
                 } else if (!inContact && wasInContact) {
                     t.hitMemory.delete(e);
@@ -1899,8 +1906,8 @@
             const nextRange = t.baseRange ? getRangeValue(t.baseRange, t.level + 1) : t.range + 15;
             detailsHtml += `<div class="stat-row"><span>강화 사거리:</span> <span>📏 ${currentRange} ➡️ <span class="stat-up">📏 ${nextRange}</span></span></div>`;
         } else if (t.type === 'chopper') {
-            const currentDamage = t.baseDamage ? getUpgradeValue(t.baseDamage, t.level) : t.damage;
-            const nextDamage = t.baseDamage ? getUpgradeValue(t.baseDamage, t.level + 1) : t.damage;
+            const currentDamage = (t.baseDamage ? getUpgradeValue(t.baseDamage, t.level) : t.damage) * CHOPPER_DAMAGE_MULT;
+            const nextDamage = (t.baseDamage ? getUpgradeValue(t.baseDamage, t.level + 1) : t.damage) * CHOPPER_DAMAGE_MULT;
             const currentOrbit = Math.min(CHOPPER_MAX_ORBIT_RADIUS, t.baseOrbitRadius ? getUpgradeValue(t.baseOrbitRadius, t.level) : t.orbitRadius);
             const nextOrbit = Math.min(CHOPPER_MAX_ORBIT_RADIUS, t.baseOrbitRadius ? getUpgradeValue(t.baseOrbitRadius, t.level + 1) : t.orbitRadius);
             const currentSpin = Math.min(CHOPPER_MAX_SPIN, t.baseSpinSpeed ? getUpgradeValue(t.baseSpinSpeed, t.level) : t.spinSpeed);
@@ -1919,7 +1926,7 @@
             detailsHtml += `<div class="stat-row"><span>회전 반지름 한계:</span> <span>📏 최대 ${CHOPPER_MAX_ORBIT_RADIUS}</span></div>`;
             detailsHtml += `<div class="stat-row"><span>회전 속도:</span> <span>🌀 ${currentSpeed}초${buffTag} ➡️ <span class="stat-up">🌀 ${nextSpeed}초</span></span></div>`;
             detailsHtml += `<div class="stat-row"><span>회전 속도 한계:</span> <span>🌀 최대 ${CHOPPER_MAX_SPIN.toFixed(1)}</span></div>`;
-            detailsHtml += `<div class="stat-row"><span>치유 감소:</span> <span>💗 50% / 5초</span></div>`;
+            detailsHtml += `<div class="stat-row"><span>치유 감소:</span> <span>💗 30% / 5초</span></div>`;
             detailsHtml += `<div class="stat-row"><span>회전 방향:</span> <span>${(t.rotationDir || 1) > 0 ? '↻ 시계' : '↺ 반시계'}</span></div>`;
         } else if (t.type === 'lemon') {
             const currentAmp = getLemonAmpValue(t.baseAmpPercent || 20, t.level);
@@ -1966,11 +1973,11 @@
                     speedMult = Math.max(speedMult, 1 + Math.min(0.5, 0.10 + (other.level - 1) * 0.05));
                 }
             });
-            const minCdFloor = t.type === 'crossbow' ? 0.06 : 0.1;
+            const minCdFloor = t.type === 'crossbow' ? CROSSBOW_MIN_COOLDOWN : 0.1;
             let curSpeed = (t.cooldownMax / speedMult).toFixed(2);
             let nextSpeed;
             if (t.type === 'crossbow') {
-                const nextCd = getCooldownValue(t.baseCooldownMax, t.level + 1, 0.1, 0.06);
+                const nextCd = getCooldownValue(t.baseCooldownMax, t.level + 1, 0.1, CROSSBOW_MIN_COOLDOWN);
                 nextSpeed = (nextCd / speedMult).toFixed(2);
             } else {
                 nextSpeed = (Math.max(minCdFloor, t.cooldownMax * 0.9) / speedMult).toFixed(2);
@@ -2014,7 +2021,7 @@
                 }
                 if (t.range > 0) t.range = getRangeValue(t.baseRange, t.level);
                 t.cooldownMax = t.type === 'crossbow'
-                    ? getCooldownValue(t.baseCooldownMax, t.level, 0.1, 0.06)
+                    ? getCooldownValue(t.baseCooldownMax, t.level, 0.1, CROSSBOW_MIN_COOLDOWN)
                     : getCooldownValue(t.baseCooldownMax, t.level);
                 if (t.type === 'tesla') t.stunDuration = Math.min(1.8, (t.stunDuration || 0.5) + 0.25);
             }
@@ -2103,7 +2110,10 @@
         target.shieldTimer = Math.max(target.shieldTimer || 0, duration);
     }
 
-    function applyDamageToEnemy(target, baseDamage) {
+    function applyDamageToEnemy(target, baseDamage, sourceTower = null) {
+        if (target.type === 'milk' && sourceTower && target.milkAttackers) {
+            target.milkAttackers.add(sourceTower);
+        }
         if (target.lemonAmpTimer > 0 && target.lemonAmpPercent > 0) {
             baseDamage *= (1 + target.lemonAmpPercent / 100);
         }
@@ -2185,19 +2195,26 @@
             }
 
             if (e.type === 'milk') {
-                const auraRange = e.auraRange || 58;
-                state.enemies.forEach(other => {
-                    if (other !== e && Math.hypot(other.x - e.x, other.y - e.y) <= auraRange) {
-                        other.statusImmune = true;
-                        other.slowImmune = true;
-                        other.stunTimer = 0;
-                        other.wetTimer = 0;
-                        other.isWet = false;
-                        other.wetSlow = 1.0;
-                        other.oilTimer = 0;
-                        other.oilSlow = 1.0;
+                if (typeof e.milkDisableTimer !== 'number' || e.milkDisableTimer <= 0) {
+                    e.milkDisableTimer = MILK_DISABLE_INTERVAL;
+                }
+                e.milkDisableTimer -= dt;
+                if (e.milkDisableTimer <= 0) {
+                    e.milkDisableTimer += MILK_DISABLE_INTERVAL;
+                    if (e.milkAttackers && e.milkAttackers.size > 0) {
+                        let candidates = Array.from(e.milkAttackers).filter(t => state.towers.includes(t) && t.type !== 'gelatin' && (t.inactiveTimer || 0) <= 0);
+                        if (candidates.length === 0) {
+                            candidates = Array.from(e.milkAttackers).filter(t => state.towers.includes(t) && t.type !== 'gelatin');
+                        }
+                        if (candidates.length > 0) {
+                            const targetTower = candidates[Math.floor(Math.random() * candidates.length)];
+                            targetTower.inactiveTimer = Math.max(targetTower.inactiveTimer || 0, MILK_DISABLE_DURATION);
+                            createParticle('text', targetTower.x, targetTower.y - 12, { text: '🥛 비활성 2.5초', color: '#74b9ff' });
+                            createParticle('splash', e.x, e.y, { radius: 34, color: 'rgba(116, 185, 255, 0.22)' });
+                        }
                     }
-                });
+                    if (e.milkAttackers) e.milkAttackers.clear();
+                }
             }
 
             if (e.type === 'fries') {
@@ -2221,7 +2238,7 @@
                     e.healCooldown = 1.5; let healedAny = false;
                     state.enemies.forEach(other => {
                         if (other !== e && Math.hypot(other.x - e.x, other.y - e.y) <= 90) {
-                            let healMultiplier = other.healReductionTimer > 0 ? other.healReductionMult || 0.5 : 1.0;
+                            let healMultiplier = other.healReductionTimer > 0 ? other.healReductionMult || CHOPPER_HEAL_REDUCTION_MULT : 1.0;
                             let healAmount = Math.min(other.maxHp - other.hp, other.maxHp * 0.25) * healMultiplier; 
                             if (healAmount > 0) {
                                 other.hp += healAmount; healedAny = true;
@@ -2292,7 +2309,7 @@
                 if (p.target && state.enemies.includes(p.target)) {
                     let dx = p.target.x - p.x; let dy = p.target.y - p.y; let dist = Math.hypot(dx, dy);
                     if (dist < 8) {
-                        applyDamageToEnemy(p.target, p.damage);
+                        applyDamageToEnemy(p.target, p.damage, p.ownerTower || null);
                         createParticle(p.type === 'arrow' ? 'splash' : 'explosion', p.target.x, p.target.y, { radius: 10 });
                         state.projectiles.splice(i, 1); continue;
                     }
@@ -2302,7 +2319,7 @@
                 p.progress += p.speed * dt;
                 if (p.progress >= 1) {
                     createParticle('explosion', p.tx, p.ty, { radius: 46 });
-                    state.enemies.forEach(e => { if (Math.hypot(e.x - p.tx, e.y - p.ty) <= 46) applyDamageToEnemy(e, p.damage); });
+                    state.enemies.forEach(e => { if (Math.hypot(e.x - p.tx, e.y - p.ty) <= 46) applyDamageToEnemy(e, p.damage, p.ownerTower || null); });
                     state.projectiles.splice(i, 1);
                 } else {
                     p.x = p.startX + (p.tx - p.startX) * p.progress;
@@ -2330,7 +2347,7 @@
                 state.enemies.forEach(e => {
                     if (Math.hypot(e.x - p.x, e.y - p.y) < e.radius + 14) {
                         if (!p.hitList.includes(e)) {
-                            p.hitList.push(e); applyDamageToEnemy(e, p.damage);
+                            p.hitList.push(e); applyDamageToEnemy(e, p.damage, p.ownerTower || null);
                             e.kbVelocity = 70; createParticle('text', e.x, e.y, { text: '🪵 밀침!', color: '#e67e22' });
                         }
                     }
@@ -2351,13 +2368,13 @@
                     if (forward > 0 && forward < visibleLength && lateral < e.radius + p.hitWidth / 2) {
                         if (!p.hitList.includes(e)) {
                             p.hitList.push(e);
-                            applyDamageToEnemy(e, p.damage * 0.32 * dt);
+                            applyDamageToEnemy(e, p.damage * 0.32 * dt, p.ownerTower || null);
                             e.oilTimer = 3.0;
                             e.oilSlow = 0.7;
                             createParticle('text', e.x, e.y, { text: '🔥 기름!', color: '#d35400' });
                         }
                         if (e.oilTimer > 0) {
-                            applyDamageToEnemy(e, p.damage * 0.2 * dt);
+                            applyDamageToEnemy(e, p.damage * 0.2 * dt, p.ownerTower || null);
                         }
                     }
                 });
@@ -2397,6 +2414,14 @@
             });
             
             t.speedMult = speedMult; t.isBuffed = (speedMult > 1.0 && t.type !== 'amplifier' && t.type !== 'mine');
+            if (t.type !== 'gelatin' && (t.inactiveTimer || 0) > 0) {
+                t.inactiveTimer -= dt;
+                if (t.inactiveTimer <= 0) {
+                    t.inactiveTimer = 0;
+                    createParticle('text', t.x, t.y - 10, { text: '재가동!', color: '#2ecc71' });
+                }
+                return;
+            }
             const effectiveSpeedMult = (t.type === 'lemon')
                 ? Math.min(speedMult, (t.cooldownMax || 6.0) / (t.minCooldown || 4.0))
                 : speedMult;
@@ -2426,12 +2451,12 @@
                     const inContact = tipContact || tipSweepContact || innerNowContact || innerPrevContact;
                     const wasInContact = t.hitMemory.get(e) === true;
                     if (inContact && !wasInContact) {
-                        applyDamageToEnemy(e, t.damage);
+                        applyDamageToEnemy(e, t.damage * CHOPPER_DAMAGE_MULT, t);
                         e.healReductionTimer = 5.0;
-                        e.healReductionMult = 0.5;
+                        e.healReductionMult = CHOPPER_HEAL_REDUCTION_MULT;
                         t.hitMemory.set(e, true);
                         createParticle('splash', bladeX, bladeY, { radius: 10, color: 'rgba(236, 240, 241, 0.35)' });
-                        createParticle('text', bladeX, bladeY - 10, { text: '💗-50%', color: '#ff6b9d' });
+                        createParticle('text', bladeX, bladeY - 10, { text: '💗-30%', color: '#ff6b9d' });
                         createParticle('splash', bladeX, bladeY, { radius: 20, color: 'rgba(255, 107, 157, 0.28)' });
                     } else if (!inContact && wasInContact) {
                         t.hitMemory.delete(e);
@@ -2493,7 +2518,8 @@
                     state.projectiles.push({
                         type: 'oil_patch', x: t.x, y: t.y, angle: angle,
                         damage: t.damage * 0.7, width: 140, length: 240, hitWidth: 70,
-                        hitList: [], life: 3.2, fadeDuration: 0.55, appearDuration: 0.8, age: 0, ripple: 0, flow: 0
+                        hitList: [], life: 3.2, fadeDuration: 0.55, appearDuration: 0.8, age: 0, ripple: 0, flow: 0,
+                        ownerTower: t
                     });
                 }
                 return;
@@ -2554,7 +2580,7 @@
                         const chargeRatio = Math.max(0, Math.min(1, (t.laserCharge || 0) / 10));
                         const minDamage = t.damage;
                         const maxDamage = t.maxDamage || t.baseMaxDamage || t.damage;
-                        applyDamageToEnemy(t.currentTarget, minDamage + (maxDamage - minDamage) * chargeRatio); t.cooldown = t.cooldownMax;
+                        applyDamageToEnemy(t.currentTarget, minDamage + (maxDamage - minDamage) * chargeRatio, t); t.cooldown = t.cooldownMax;
                     }
                 }
                 
@@ -2595,20 +2621,20 @@
             if (t.type === 'log') {
                 if (t.cooldown <= 0) {
                     t.cooldown = t.cooldownMax; let logMaxDistance = 200 + (t.level * 80); 
-                    state.projectiles.push({ type: 'log_obj', x: t.x, y: t.y, speed: 120, angle: t.angle, damage: t.damage, hitList: [], distance: 0, maxDistance: logMaxDistance, rotation: 0 });
+                    state.projectiles.push({ type: 'log_obj', x: t.x, y: t.y, speed: 120, angle: t.angle, damage: t.damage, hitList: [], distance: 0, maxDistance: logMaxDistance, rotation: 0, ownerTower: t });
                 } return;
             }
 
             if (target && t.cooldown <= 0) {
                 t.cooldown = t.cooldownMax;
                 if (t.type === 'cannon') {
-                    state.projectiles.push({ type: 'cannon_ball', x: t.x, y: t.y, speed: 180, target: target, damage: t.damage });
+                    state.projectiles.push({ type: 'cannon_ball', x: t.x, y: t.y, speed: 180, target: target, damage: t.damage, ownerTower: t });
                 } else if (t.type === 'shotgun') {
-                    applyDamageToEnemy(target, t.damage); createParticle('splash', target.x, target.y, { radius: 22, color: 'rgba(236, 240, 241, 0.8)' });
+                    applyDamageToEnemy(target, t.damage, t); createParticle('splash', target.x, target.y, { radius: 22, color: 'rgba(236, 240, 241, 0.8)' });
                     for(let j=0; j<4; j++) createParticle('laser', t.x, t.y, { tx: target.x + (Math.random()-0.5)*25, ty: target.y + (Math.random()-0.5)*25, color: 'rgba(236, 240, 241, 0.6)', width: 3 });
                 } else if (t.type === 'mortar') {
                     let dist = Math.hypot(target.x - t.x, target.y - t.y); let duration = Math.max(0.5, dist / 160); 
-                    state.projectiles.push({ type: 'mortar_shell', x: t.x, y: t.y, startX: t.x, startY: t.y, tx: target.x, ty: target.y, progress: 0, speed: 1 / duration, damage: t.damage });
+                    state.projectiles.push({ type: 'mortar_shell', x: t.x, y: t.y, startX: t.x, startY: t.y, tx: target.x, ty: target.y, progress: 0, speed: 1 / duration, damage: t.damage, ownerTower: t });
                 } else if (t.type === 'lemon') {
                     let dist = Math.hypot(target.x - t.x, target.y - t.y); let duration = Math.max(0.6, dist / 150);
                     state.projectiles.push({
@@ -2625,7 +2651,7 @@
                     createParticle('splash', t.x, t.y, { radius: t.range });
                 } else if (t.type === 'tesla') {
                     let dmg = target.isWet ? t.damage * 1.6 : t.damage;
-                    applyDamageToEnemy(target, dmg); applyStun(target, t.stunDuration || 0.5);
+                    applyDamageToEnemy(target, dmg, t); applyStun(target, t.stunDuration || 0.5);
                     createParticle('lightning', t.x, t.y, { tx: target.x, ty: target.y });
                     if (target.isWet) {
                         let chainTarget = null, chainDist = 100;
@@ -2633,12 +2659,12 @@
                             if (e !== target && Math.hypot(target.x - e.x, target.y - e.y) <= chainDist) { chainDist = Math.hypot(target.x - e.x, target.y - e.y); chainTarget = e; }
                         });
                         if (chainTarget) {
-                            applyDamageToEnemy(chainTarget, dmg); applyStun(chainTarget, t.stunDuration || 0.5);
+                            applyDamageToEnemy(chainTarget, dmg, t); applyStun(chainTarget, t.stunDuration || 0.5);
                             createParticle('lightning', target.x, target.y, { tx: chainTarget.x, ty: chainTarget.y });
                         }
                     }
                 } else if (t.type === 'crossbow') {
-                    state.projectiles.push({ type: 'arrow', x: t.x, y: t.y, speed: 450, target: target, damage: t.damage });
+                    state.projectiles.push({ type: 'arrow', x: t.x, y: t.y, speed: 450, target: target, damage: t.damage, ownerTower: t });
                 }
             }
         });
