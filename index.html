@@ -349,7 +349,11 @@
         pendingGelatin: null, isPaused: false,
         maxClearedWave: 1
     };
-    const VIEW_SCALE = 1.6;
+    // Keep world coordinates unzoomed; upscale by shrinking logical canvas size.
+    const VIEW_SCALE = 1.0;
+    const DISPLAY_SCALE = 1.6;
+    const CHOPPER_MAX_SPIN = 7.0;
+    const CHOPPER_MAX_ORBIT_RADIUS = 120;
 
     const pauseReasons = new Set();
     function setPause(reason, shouldPause) {
@@ -460,9 +464,9 @@
         return value;
     }
 
-    function getCooldownValue(base, level, minRatio = 0.45) {
+    function getCooldownValue(base, level, minRatio = 0.45, minAbsolute = 0.3) {
         const raw = base * (1 - 0.15 * (level - 1));
-        return Math.max(0.3, Math.max(base * minRatio, raw));
+        return Math.max(minAbsolute, Math.max(base * minRatio, raw));
     }
 
     function getRangeValue(base, level, maxRatio = 2.2) {
@@ -485,12 +489,7 @@
         const rect = canvas.getBoundingClientRect();
         const sx = (clientX - rect.left) * (canvas.width / rect.width);
         const sy = (clientY - rect.top) * (canvas.height / rect.height);
-        const cx = canvas.width / 2;
-        const cy = canvas.height / 2;
-        return {
-            x: cx + (sx - cx) / VIEW_SCALE,
-            y: cy + (sy - cy) / VIEW_SCALE
-        };
+        return { x: sx, y: sy };
     }
 
     function syncWaveSelect() {
@@ -583,12 +582,14 @@
                     }
                     if (tower.type === 'chopper') {
                         tower.orbitRadius = tower.orbitRadius || tower.baseOrbitRadius || getUpgradeValue(TOWER_DEFS.chopper.orbitRadius, tower.level || 1);
+                        tower.orbitRadius = Math.min(CHOPPER_MAX_ORBIT_RADIUS, tower.orbitRadius);
                         tower.spinSpeed = tower.spinSpeed || tower.baseSpinSpeed || getUpgradeValue(TOWER_DEFS.chopper.spinSpeed, tower.level || 1);
+                        tower.spinSpeed = Math.min(CHOPPER_MAX_SPIN, tower.spinSpeed);
                         if ((tower.level || 1) === 1 && tower.spinSpeed > TOWER_DEFS.chopper.spinSpeed * 1.05) {
                             tower.spinSpeed = TOWER_DEFS.chopper.spinSpeed;
                         }
                         tower.bladeReach = tower.bladeReach || TOWER_DEFS.chopper.bladeReach;
-                        tower.range = tower.range || Math.round(tower.orbitRadius + (tower.bladeReach || 16));
+                        tower.range = Math.round(tower.orbitRadius + (tower.bladeReach || 16));
                     }
                     if (tower.type === 'lemon') {
                         const lv = tower.level || 1;
@@ -616,7 +617,7 @@
                             const cappedMinutes = Math.min(minutes, 24 * 60);
                             const offlineReward = Math.round(state.wave * 50 * cappedMinutes / 30);
                             const piggyLevelSum = state.towers.reduce((sum, tower) => sum + (tower.type === 'mine' ? (tower.level || 1) : 0), 0);
-                            const piggyBonus = Math.round(piggyLevelSum * 10 * cappedMinutes);
+                            const piggyBonus = Math.round(piggyLevelSum * cappedMinutes);
                             const totalOfflineReward = offlineReward + piggyBonus;
                             if (totalOfflineReward > 0) {
                                 state.money += totalOfflineReward;
@@ -674,10 +675,12 @@
     function resizeCanvas() {
         const dpr = Math.max(1, window.devicePixelRatio || 1);
         const rect = canvas.getBoundingClientRect();
-        const newWidth = Math.floor(rect.width * dpr);
-        const newHeight = Math.floor(rect.height * dpr);
-        const newGameWidth = rect.width;
-        const newGameHeight = rect.height;
+        const logicalWidth = rect.width / DISPLAY_SCALE;
+        const logicalHeight = rect.height / DISPLAY_SCALE;
+        const newWidth = Math.floor(logicalWidth * dpr);
+        const newHeight = Math.floor(logicalHeight * dpr);
+        const newGameWidth = logicalWidth;
+        const newGameHeight = logicalHeight;
 
         if (lastGameWidth > 0 && lastGameHeight > 0 && (newGameWidth !== lastGameWidth || newGameHeight !== lastGameHeight)) {
             const scaleX = newGameWidth / lastGameWidth;
@@ -716,8 +719,8 @@
 
         gameWidth = newGameWidth;
         gameHeight = newGameHeight;
-        canvas.style.width = `${newGameWidth}px`;
-        canvas.style.height = `${newGameHeight}px`;
+        canvas.style.width = `${rect.width}px`;
+        canvas.style.height = `${rect.height}px`;
         canvas.width = newWidth;
         canvas.height = newHeight;
         ctx.imageSmoothingEnabled = true;
@@ -1032,6 +1035,7 @@
             };
             sandbox.towers = [tower, cannon];
         } else if (type === 'chopper') {
+            tower.orbitRadius = Math.min(CHOPPER_MAX_ORBIT_RADIUS, tower.orbitRadius || tower.baseOrbitRadius || TOWER_DEFS.chopper.orbitRadius);
             tower.range = tower.orbitRadius + (tower.bladeReach || 16);
         }
 
@@ -1159,15 +1163,23 @@
             t.cooldown -= dt * effectiveSpeedMult;
 
             if (t.type === 'chopper') {
-                const orbitRadius = t.orbitRadius || 38;
-                const spinSpeed = t.spinSpeed || 3.2;
+                const orbitRadius = Math.min(CHOPPER_MAX_ORBIT_RADIUS, t.orbitRadius || 38);
+                const spinSpeed = Math.min(CHOPPER_MAX_SPIN, t.spinSpeed || 3.2);
                 const bladeReach = t.bladeReach || 16;
                 const rotationDir = t.rotationDir || 1;
-                t.bladeAngle = (t.bladeAngle || 0) + dt * spinSpeed * speedMult * rotationDir;
+                const prevBladeAngle = t.bladeAngle || 0;
+                const effectiveSpin = Math.min(CHOPPER_MAX_SPIN, spinSpeed * speedMult);
+                t.bladeAngle = prevBladeAngle + dt * effectiveSpin * rotationDir;
+                const prevBladeX = t.x + Math.cos(prevBladeAngle) * orbitRadius;
+                const prevBladeY = t.y + Math.sin(prevBladeAngle) * orbitRadius;
                 const bladeX = t.x + Math.cos(t.bladeAngle) * orbitRadius;
                 const bladeY = t.y + Math.sin(t.bladeAngle) * orbitRadius;
                 if (!t.hitMemory) t.hitMemory = new Map();
-                const inContact = Math.hypot(e.x - bladeX, e.y - bladeY) <= e.radius + bladeReach;
+                const tipContact = Math.hypot(e.x - bladeX, e.y - bladeY) <= e.radius + bladeReach;
+                const tipSweepContact = distToSegment(e, { x: prevBladeX, y: prevBladeY }, { x: bladeX, y: bladeY }) <= e.radius + bladeReach;
+                const innerNowContact = distToSegment(e, { x: t.x, y: t.y }, { x: bladeX, y: bladeY }) <= e.radius + Math.max(5, bladeReach * 0.55);
+                const innerPrevContact = distToSegment(e, { x: t.x, y: t.y }, { x: prevBladeX, y: prevBladeY }) <= e.radius + Math.max(5, bladeReach * 0.55);
+                const inContact = tipContact || tipSweepContact || innerNowContact || innerPrevContact;
                 const wasInContact = t.hitMemory.get(e) === true;
                 if (inContact && !wasInContact) {
                     tooltipApplyDamage(e, t.damage);
@@ -1887,10 +1899,10 @@
         } else if (t.type === 'chopper') {
             const currentDamage = t.baseDamage ? getUpgradeValue(t.baseDamage, t.level) : t.damage;
             const nextDamage = t.baseDamage ? getUpgradeValue(t.baseDamage, t.level + 1) : t.damage;
-            const currentOrbit = t.baseOrbitRadius ? getUpgradeValue(t.baseOrbitRadius, t.level) : t.orbitRadius;
-            const nextOrbit = t.baseOrbitRadius ? getUpgradeValue(t.baseOrbitRadius, t.level + 1) : t.orbitRadius;
-            const currentSpin = t.baseSpinSpeed ? getUpgradeValue(t.baseSpinSpeed, t.level) : t.spinSpeed;
-            const nextSpin = t.baseSpinSpeed ? getUpgradeValue(t.baseSpinSpeed, t.level + 1) : t.spinSpeed;
+            const currentOrbit = Math.min(CHOPPER_MAX_ORBIT_RADIUS, t.baseOrbitRadius ? getUpgradeValue(t.baseOrbitRadius, t.level) : t.orbitRadius);
+            const nextOrbit = Math.min(CHOPPER_MAX_ORBIT_RADIUS, t.baseOrbitRadius ? getUpgradeValue(t.baseOrbitRadius, t.level + 1) : t.orbitRadius);
+            const currentSpin = Math.min(CHOPPER_MAX_SPIN, t.baseSpinSpeed ? getUpgradeValue(t.baseSpinSpeed, t.level) : t.spinSpeed);
+            const nextSpin = Math.min(CHOPPER_MAX_SPIN, t.baseSpinSpeed ? getUpgradeValue(t.baseSpinSpeed, t.level + 1) : t.spinSpeed);
             let speedMult = 1.0;
             state.towers.forEach(other => {
                 if (other.type === 'amplifier' && Math.hypot(t.x - other.x, t.y - other.y) <= other.range) {
@@ -1902,7 +1914,9 @@
             const buffTag = speedMult > 1.0 ? ' <span style="color:#f39c12; font-size:10px;">(강화됨)</span>' : '';
             detailsHtml += `<div class="stat-row"><span>회전 피해:</span> <span>⚔️ ${Number.isInteger(currentDamage) ? currentDamage : currentDamage.toFixed(2)} ➡️ <span class="stat-up">⚔️ ${Number.isInteger(nextDamage) ? nextDamage : nextDamage.toFixed(2)}</span></span></div>`;
             detailsHtml += `<div class="stat-row"><span>회전 반지름:</span> <span>📏 ${Math.round(currentOrbit)} ➡️ <span class="stat-up">📏 ${Math.round(nextOrbit)}</span></span></div>`;
+            detailsHtml += `<div class="stat-row"><span>회전 반지름 한계:</span> <span>📏 최대 ${CHOPPER_MAX_ORBIT_RADIUS}</span></div>`;
             detailsHtml += `<div class="stat-row"><span>회전 속도:</span> <span>🌀 ${currentSpeed}초${buffTag} ➡️ <span class="stat-up">🌀 ${nextSpeed}초</span></span></div>`;
+            detailsHtml += `<div class="stat-row"><span>회전 속도 한계:</span> <span>🌀 최대 ${CHOPPER_MAX_SPIN.toFixed(1)}</span></div>`;
             detailsHtml += `<div class="stat-row"><span>치유 감소:</span> <span>💗 50% / 5초</span></div>`;
             detailsHtml += `<div class="stat-row"><span>회전 방향:</span> <span>${(t.rotationDir || 1) > 0 ? '↻ 시계' : '↺ 반시계'}</span></div>`;
         } else if (t.type === 'lemon') {
@@ -1950,7 +1964,15 @@
                     speedMult = Math.max(speedMult, 1 + Math.min(0.5, 0.10 + (other.level - 1) * 0.05));
                 }
             });
-            let curSpeed = (t.cooldownMax / speedMult).toFixed(2); let nextSpeed = (Math.max(0.1, t.cooldownMax * 0.9) / speedMult).toFixed(2);
+            const minCdFloor = t.type === 'crossbow' ? 0.02 : 0.1;
+            let curSpeed = (t.cooldownMax / speedMult).toFixed(2);
+            let nextSpeed;
+            if (t.type === 'crossbow') {
+                const nextCd = getCooldownValue(t.baseCooldownMax, t.level + 1, 0.1, 0.02);
+                nextSpeed = (nextCd / speedMult).toFixed(2);
+            } else {
+                nextSpeed = (Math.max(minCdFloor, t.cooldownMax * 0.9) / speedMult).toFixed(2);
+            }
             let buffTag = speedMult > 1.0 ? ' <span style="color:#f39c12; font-size:10px;">(강화됨)</span>' : '';
             detailsHtml += `<div class="stat-row"><span>공격 대기시간:</span> <span>⏱️ ${curSpeed}초${buffTag} ➡️ <span class="stat-up">${nextSpeed}초</span></span></div>`;
         }
@@ -1969,8 +1991,8 @@
                 t.range = getRangeValue(t.baseRange, t.level);
             } else if (t.type === 'chopper') {
                 t.damage = getUpgradeValue(t.baseDamage, t.level);
-                t.orbitRadius = getUpgradeValue(t.baseOrbitRadius, t.level);
-                t.spinSpeed = getUpgradeValue(t.baseSpinSpeed, t.level);
+                t.orbitRadius = Math.min(CHOPPER_MAX_ORBIT_RADIUS, getUpgradeValue(t.baseOrbitRadius, t.level));
+                t.spinSpeed = Math.min(CHOPPER_MAX_SPIN, getUpgradeValue(t.baseSpinSpeed, t.level));
                 t.range = Math.round(t.orbitRadius + (t.bladeReach || 16));
             } else if (t.type === 'lemon') {
                 t.ampPercent = getLemonAmpValue(t.baseAmpPercent || 20, t.level);
@@ -1989,7 +2011,9 @@
                     t.damage = getUpgradeValue(t.baseDamage, t.level);
                 }
                 if (t.range > 0) t.range = getRangeValue(t.baseRange, t.level);
-                t.cooldownMax = getCooldownValue(t.baseCooldownMax, t.level);
+                t.cooldownMax = t.type === 'crossbow'
+                    ? getCooldownValue(t.baseCooldownMax, t.level, 0.1, 0.02)
+                    : getCooldownValue(t.baseCooldownMax, t.level);
                 if (t.type === 'tesla') t.stunDuration = Math.min(1.8, (t.stunDuration || 0.5) + 0.25);
             }
             
@@ -2370,11 +2394,15 @@
             t.cooldown -= dt * effectiveSpeedMult; 
 
             if (t.type === 'chopper') {
-                const orbitRadius = t.orbitRadius || t.baseOrbitRadius || 38;
-                const spinSpeed = t.spinSpeed || t.baseSpinSpeed || 3.2;
+                const orbitRadius = Math.min(CHOPPER_MAX_ORBIT_RADIUS, t.orbitRadius || t.baseOrbitRadius || 38);
+                const spinSpeed = Math.min(CHOPPER_MAX_SPIN, t.spinSpeed || t.baseSpinSpeed || 3.2);
                 const bladeReach = t.bladeReach || 16;
                 const rotationDir = t.rotationDir || 1;
-                t.bladeAngle = (t.bladeAngle || 0) + dt * spinSpeed * speedMult * rotationDir;
+                const prevBladeAngle = t.bladeAngle || 0;
+                const effectiveSpin = Math.min(CHOPPER_MAX_SPIN, spinSpeed * speedMult);
+                t.bladeAngle = prevBladeAngle + dt * effectiveSpin * rotationDir;
+                const prevBladeX = t.x + Math.cos(prevBladeAngle) * orbitRadius;
+                const prevBladeY = t.y + Math.sin(prevBladeAngle) * orbitRadius;
                 const bladeX = t.x + Math.cos(t.bladeAngle) * orbitRadius;
                 const bladeY = t.y + Math.sin(t.bladeAngle) * orbitRadius;
                 if (!t.hitMemory) t.hitMemory = new Map();
@@ -2382,7 +2410,11 @@
                     if (!state.enemies.includes(enemyRef)) t.hitMemory.delete(enemyRef);
                 }
                 state.enemies.forEach(e => {
-                    const inContact = Math.hypot(e.x - bladeX, e.y - bladeY) <= e.radius + bladeReach;
+                    const tipContact = Math.hypot(e.x - bladeX, e.y - bladeY) <= e.radius + bladeReach;
+                    const tipSweepContact = distToSegment(e, { x: prevBladeX, y: prevBladeY }, { x: bladeX, y: bladeY }) <= e.radius + bladeReach;
+                    const innerNowContact = distToSegment(e, { x: t.x, y: t.y }, { x: bladeX, y: bladeY }) <= e.radius + Math.max(5, bladeReach * 0.55);
+                    const innerPrevContact = distToSegment(e, { x: t.x, y: t.y }, { x: prevBladeX, y: prevBladeY }) <= e.radius + Math.max(5, bladeReach * 0.55);
+                    const inContact = tipContact || tipSweepContact || innerNowContact || innerPrevContact;
                     const wasInContact = t.hitMemory.get(e) === true;
                     if (inContact && !wasInContact) {
                         applyDamageToEnemy(e, t.damage);
